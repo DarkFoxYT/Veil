@@ -50,18 +50,16 @@ repositories {
 }
 
 dependencies {
-    jarJar(api(additionalRuntimeClasspath("gg.moonflower:molang-compiler:$molang_compiler_version")))
-    jarJar(api(additionalRuntimeClasspath("io.github.ocelot:glsl-processor:${glsl_processor_version}")))
+    jarJar(api("gg.moonflower:molang-compiler:$molang_compiler_version"))
+    jarJar(api("io.github.ocelot:glsl-processor:${glsl_processor_version}"))
 
     compileOnly "foundry.imguimc:imguimc-neoforge-${minecraft_version}:$imguimc_version"
 
     compileOnly "net.caffeinemc:sodium-neoforge-mod:${sodium_version}"
-    compileOnly "maven.modrinth:iris:1.8.8+1.21.1-neoforge"
+    compileOnly "maven.modrinth:iris:1.10.7+1.21.11-neoforge"
 //    compileOnly "maven.modrinth:tacz-1.21.1:1.1.7-hotfix-r3"
 //    runtimeOnly "net.caffeinemc:sodium-neoforge:${sodium_version}"
-//    runtimeOnly "maven.modrinth:iris:1.8.8+1.21.1-neoforge"
+//    runtimeOnly "maven.modrinth:iris:1.10.7+1.21.11-neoforge"
 //    runtimeOnly "maven.modrinth:tacz-1.21.1:1.1.7-hotfix-r3"
 
-    // Allows sodium compat to compile properly
-    compileOnly "org.sinytra.forgified-fabric-api:forgified-fabric-api:0.104.0+2.0.19+1.21.1"
 }

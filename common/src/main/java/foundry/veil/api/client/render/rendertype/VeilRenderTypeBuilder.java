@@ -1,7 +1,8 @@
 package foundry.veil.api.client.render.rendertype;
 
 import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 /**
  * Extended render type builder that adds support for custom layers.
@@ -36,9 +37,5 @@ public interface VeilRenderTypeBuilder {
 
     VeilRenderTypeBuilder addLayer(RenderStateShard shard);
 
-    default RenderType.CompositeState create(boolean affectsOutline) {
-        return this.create(affectsOutline ? RenderType.OutlineProperty.AFFECTS_OUTLINE : RenderType.OutlineProperty.NONE);
-    }
-
-    RenderType.CompositeState create(RenderType.OutlineProperty outlineProperty);
+    RenderType create(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, boolean affectsOutline);
 }

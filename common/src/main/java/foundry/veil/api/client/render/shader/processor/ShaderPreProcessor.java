@@ -14,7 +14,7 @@ import io.github.ocelot.glslprocessor.api.node.GlslTree;
 import io.github.ocelot.glslprocessor.api.node.function.GlslFunctionNode;
 import io.github.ocelot.glslprocessor.api.node.variable.GlslNewFieldNode;
 import io.github.ocelot.glslprocessor.lib.anarres.cpp.LexerException;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GLCapabilities;
 
@@ -105,7 +105,7 @@ public interface ShaderPreProcessor {
          * @throws GlslSyntaxException If there was an error in the syntax of the source code
          * @throws LexerException      If an error occurs during shader C preprocessing
          */
-        GlslTree modifyInclude(@Nullable ResourceLocation name, String source) throws IOException, GlslSyntaxException, LexerException;
+        GlslTree modifyInclude(@Nullable Identifier name, String source) throws IOException, GlslSyntaxException, LexerException;
 
         /**
          * @return A custom map of data shared for a shader program
@@ -116,7 +116,7 @@ public interface ShaderPreProcessor {
          * @return The id of the shader being compiled or <code>null</code> if the shader is compiled from a raw string
          */
         @Nullable
-        ResourceLocation name();
+        Identifier name();
 
         /**
          * @return Whether the processor is being run for a source file and not a #include file
@@ -200,7 +200,7 @@ public interface ShaderPreProcessor {
          * @param strategy How duplicate shader methods should be handled
          * @throws IOException If there was an error loading the import file
          */
-        default void include(GlslTree tree, ResourceLocation name, IncludeOverloadStrategy strategy) throws IOException, GlslSyntaxException, LexerException {
+        default void include(GlslTree tree, Identifier name, IncludeOverloadStrategy strategy) throws IOException, GlslSyntaxException, LexerException {
             this.include(tree, name.toString(), this.shaderImporter().loadImport(this, name, false), strategy);
         }
 
@@ -311,7 +311,7 @@ public interface ShaderPreProcessor {
 
         /**
          * @return The importer instance
-         * @see #include(GlslTree, ResourceLocation, IncludeOverloadStrategy)
+         * @see #include(GlslTree, Identifier, IncludeOverloadStrategy)
          */
         ShaderImporter shaderImporter();
 

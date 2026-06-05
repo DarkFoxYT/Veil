@@ -1,6 +1,6 @@
 package foundry.veil.impl.client.render.shader.modifier;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +22,7 @@ public final class ShaderModificationParser {
 
         int version = -1;
         int priority = 1000;
-        List<ResourceLocation> includes = new ArrayList<>();
+        List<Identifier> includes = new ArrayList<>();
         while (reader.canRead()) {
             switch (reader.peek().type()) {
                 case VERSION -> {
@@ -42,7 +42,7 @@ public final class ShaderModificationParser {
                 }
                 case REPLACE -> {
                     reader.skip();
-                    ResourceLocation file = consumeLocation(reader);
+                    Identifier file = consumeLocation(reader);
                     reader.skipWhitespace();
                     if (reader.canRead()) {
                         throw error("Trailing statement", reader);
@@ -84,7 +84,7 @@ public final class ShaderModificationParser {
         return vertex ?
                 new VertexShaderModification(version,
                         priority,
-                        includes.toArray(ResourceLocation[]::new),
+                        includes.toArray(Identifier[]::new),
                         context.output.toString().trim(),
                         context.uniform.toString().trim(),
                         functions,
@@ -92,7 +92,7 @@ public final class ShaderModificationParser {
                 ) :
                 new SimpleShaderModification(version,
                         priority,
-                        includes.toArray(ResourceLocation[]::new),
+                        includes.toArray(Identifier[]::new),
                         context.output.toString().trim(),
                         context.uniform.toString().trim(),
                         functions);
@@ -180,7 +180,7 @@ public final class ShaderModificationParser {
         return code.toString().trim() + '\n';
     }
 
-    private static ResourceLocation consumeLocation(TokenReader reader) throws ShaderModificationSyntaxException {
+    private static Identifier consumeLocation(TokenReader reader) throws ShaderModificationSyntaxException {
         String namespace = consume(reader, ShaderModifierLexer.TokenType.ALPHANUMERIC);
         if (reader.peek().type() == ShaderModifierLexer.TokenType.COLON) {
             reader.skip();
@@ -195,9 +195,9 @@ public final class ShaderModificationParser {
                 throw error("Unexpected Token", reader);
             }
 
-            return ResourceLocation.fromNamespaceAndPath(namespace, path.toString());
+            return Identifier.fromNamespaceAndPath(namespace, path.toString());
         }
-        return ResourceLocation.parse(namespace);
+        return Identifier.parse(namespace);
     }
 
     private static int consumeInt(TokenReader reader) throws ShaderModificationSyntaxException {

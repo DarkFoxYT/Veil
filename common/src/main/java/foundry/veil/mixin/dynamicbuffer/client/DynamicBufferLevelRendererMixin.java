@@ -3,7 +3,7 @@ package foundry.veil.mixin.dynamicbuffer.client;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.rendertype.VeilRenderType;
@@ -28,13 +28,13 @@ public abstract class DynamicBufferLevelRendererMixin {
     @Unique
     private final DynamicBufferShard veil$weatherBufferShard = new DynamicBufferShard("weather", this::getWeatherTarget);
 
-    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;setupRender(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/culling/Frustum;ZZ)V", shift = At.Shift.BEFORE))
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;prepareCullFrustum(Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/client/renderer/culling/Frustum;", shift = At.Shift.BEFORE), require = 0)
     public void setupOpaque(CallbackInfo ci) {
         VeilRenderSystem.renderer().getDynamicBufferManger().setEnabled(true);
     }
 
     // Make sure the correct dynamic buffer state is set
-    @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;setupRenderState()V"))
+    @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;setupRenderState()V"), require = 0)
     public void setupState(RenderStateShard.OutputStateShard instance, Operation<Void> original) {
         if ("weather_target".equals(VeilRenderType.getName(instance))) {
             this.veil$weatherBufferShard.setupRenderState();
@@ -43,7 +43,7 @@ public abstract class DynamicBufferLevelRendererMixin {
         }
     }
 
-    @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;setupRenderState()V"))
+    @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;setupRenderState()V"), require = 0)
     public void clearState(RenderStateShard.OutputStateShard instance, Operation<Void> original) {
         if ("weather_target".equals(VeilRenderType.getName(instance))) {
             this.veil$weatherBufferShard.clearRenderState();
@@ -52,7 +52,7 @@ public abstract class DynamicBufferLevelRendererMixin {
         }
     }
 
-    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/OutlineBufferSource;endOutlineBatch()V", ordinal = 0))
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/OutlineBufferSource;endOutlineBatch()V", ordinal = 0), require = 0)
     public void endOpaque(CallbackInfo ci) {
         VeilRenderSystem.renderer().getDynamicBufferManger().setEnabled(false);
     }

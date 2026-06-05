@@ -3,8 +3,8 @@ package foundry.veil.api.client.render.shader.processor;
 import io.github.ocelot.glslprocessor.api.GlslSyntaxException;
 import io.github.ocelot.glslprocessor.api.node.GlslTree;
 import io.github.ocelot.glslprocessor.lib.anarres.cpp.LexerException;
-import net.minecraft.ResourceLocationException;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.IdentifierException;
+import net.minecraft.resources.Identifier;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,8 +41,8 @@ public class ShaderImportProcessor implements ShaderPreProcessor {
             String importId = sanitizeLocation(directive.substring(ShaderImportProcessor.INCLUDE_KEY.length()).trim());
 
             try {
-                ctx.include(tree, ResourceLocation.parse(importId), IncludeOverloadStrategy.SOURCE);
-            } catch (ResourceLocationException e) {
+                ctx.include(tree, Identifier.parse(importId), IncludeOverloadStrategy.SOURCE);
+            } catch (IdentifierException e) {
                 throw new IOException("Invalid import: " + importId, e);
             }
         }

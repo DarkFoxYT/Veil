@@ -37,10 +37,11 @@ public class DSAVanillaAdvancedFboWrapper extends VanillaAdvancedFboWrapper {
 
             RenderTarget renderTarget = this.toRenderTarget();
             if ((clearMask & GL_COLOR_BUFFER_BIT) != 0) {
+                int colorTextureId = VeilRenderSystem.getColorTextureId(renderTarget);
                 if (clearTex) {
-                    glClearTexImage(renderTarget.getColorTextureId(), 0, GL_RGBA, GL_FLOAT, stack.floats(red, green, blue, alpha));
+                    glClearTexImage(colorTextureId, 0, GL_RGBA, GL_FLOAT, stack.floats(red, green, blue, alpha));
                 } else {
-                    glClearNamedFramebufferfv(renderTarget.getColorTextureId(), GL_COLOR, 0, stack.floats(red, green, blue, alpha));
+                    glClearNamedFramebufferfv(this.getId(), GL_COLOR, 0, stack.floats(red, green, blue, alpha));
                 }
             }
 
@@ -54,8 +55,9 @@ public class DSAVanillaAdvancedFboWrapper extends VanillaAdvancedFboWrapper {
 
                 if (hasStencilAttachment) {
                     if (hasDepth && hasStencil) {
+                        int depthTextureId = VeilRenderSystem.getDepthTextureId(renderTarget);
                         if (clearTex) {
-                            glClearTexImage(renderTarget.getDepthTextureId(), 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, (ByteBuffer) null);
+                            glClearTexImage(depthTextureId, 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, (ByteBuffer) null);
                         } else {
                             glClearNamedFramebufferfi(this.getId(), GL_DEPTH_STENCIL, 0, depth, glGetInteger(GL_STENCIL_CLEAR_VALUE));
                         }
@@ -70,7 +72,7 @@ public class DSAVanillaAdvancedFboWrapper extends VanillaAdvancedFboWrapper {
                     }
                 } else {
                     if (clearTex) {
-                        glClearTexImage(renderTarget.getDepthTextureId(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, stack.floats(depth));
+                        glClearTexImage(VeilRenderSystem.getDepthTextureId(renderTarget), 0, GL_DEPTH_COMPONENT, GL_FLOAT, stack.floats(depth));
                     } else {
                         glClearNamedFramebufferfv(this.getId(), GL_DEPTH, 0, stack.floats(depth));
                     }
@@ -78,7 +80,7 @@ public class DSAVanillaAdvancedFboWrapper extends VanillaAdvancedFboWrapper {
             }
         }
 
-        if (Minecraft.ON_OSX) {
+        if ((net.minecraft.util.Util.getPlatform() == net.minecraft.util.Util.OS.OSX)) {
             glGetError();
         }
     }
@@ -95,6 +97,6 @@ public class DSAVanillaAdvancedFboWrapper extends VanillaAdvancedFboWrapper {
 
     @Override
     public void resolveToRenderTarget(RenderTarget target, int mask, int filtering) {
-        glBlitNamedFramebuffer(this.getId(), target.frameBufferId, 0, 0, this.getWidth(), this.getHeight(), 0, 0, target.width, target.height, mask, filtering);
+        glBlitNamedFramebuffer(this.getId(), VeilRenderSystem.getFramebufferId(target), 0, 0, this.getWidth(), this.getHeight(), 0, 0, target.width, target.height, mask, filtering);
     }
 }

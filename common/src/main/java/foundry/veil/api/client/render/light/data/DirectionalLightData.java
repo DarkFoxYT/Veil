@@ -88,7 +88,7 @@ public class DirectionalLightData extends LightData implements EditorAttributePr
 
     @Override
     public DirectionalLightData setTo(Camera camera) {
-        this.direction.set(camera.getLookVector());
+        this.direction.set(camera.forwardVector());
         return this;
     }
 

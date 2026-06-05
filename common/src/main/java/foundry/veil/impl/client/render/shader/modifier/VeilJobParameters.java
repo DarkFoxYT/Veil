@@ -1,12 +1,12 @@
 package foundry.veil.impl.client.render.shader.modifier;
 
 import foundry.veil.api.client.render.shader.ShaderModificationManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Collection;
 
 public record VeilJobParameters(ShaderModificationManager modificationManager,
-                                ResourceLocation shaderId,
+                                Identifier shaderId,
                                 int flags) {
 
     /**

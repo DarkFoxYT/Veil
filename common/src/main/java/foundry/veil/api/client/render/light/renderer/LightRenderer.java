@@ -12,7 +12,7 @@ import foundry.veil.api.client.render.light.data.LightData;
 import foundry.veil.api.client.render.vertex.VertexArray;
 import foundry.veil.impl.client.render.light.VoxelShadowGrid;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.lwjgl.system.NativeResource;
@@ -35,7 +35,7 @@ import static org.lwjgl.opengl.GL11C.*;
  */
 public final class LightRenderer implements NativeResource {
 
-    private static final ResourceLocation BUFFER_ID = Veil.veilPath("lights");
+    private static final Identifier BUFFER_ID = Veil.veilPath("lights");
     private final Map<LightTypeRegistry.LightType<?>, LightTypeRenderer<?>> renderers;
     private final Map<LightTypeRegistry.LightType<?>, LightTypeRenderer<?>> renderersView;
 
@@ -107,7 +107,7 @@ public final class LightRenderer implements NativeResource {
     @SuppressWarnings("unchecked")
     public <T extends LightData> LightRenderHandle<T> addLight(T lightData) {
         Objects.requireNonNull(lightData, "light");
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         return ((LightTypeRenderer<T>) this.renderers.computeIfAbsent(lightData.getType(), lightType -> lightType.rendererFactory().createRenderer())).addLight(lightData);
     }
 
@@ -120,7 +120,7 @@ public final class LightRenderer implements NativeResource {
     @SuppressWarnings("unchecked")
     public <T extends LightData> LightRenderHandle<T> addLight(LightRenderHandle<T> handle) {
         Objects.requireNonNull(handle, "light");
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         return ((LightTypeRenderer<T>) this.renderers.computeIfAbsent(handle.getLightData().getType(), lightType -> lightType.rendererFactory().createRenderer())).steal(handle);
     }
 

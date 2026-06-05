@@ -8,7 +8,9 @@ import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.compat.IrisCompat;
 import foundry.veil.impl.client.render.pipeline.VeilBloomRenderer;
 import foundry.veil.impl.client.render.pipeline.VeilFirstPersonRenderer;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import org.joml.Vector3f;
@@ -19,36 +21,36 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(GameRenderer.class)
-public class PipelineGameRendererMixin {
+public abstract class PipelineGameRendererMixin {
 
     @Shadow
     @Final
     Minecraft minecraft;
+
     @Shadow
-    private boolean panoramicMode;
+    public abstract boolean isPanoramicMode();
 
     @Unique
     private final Vector3f veil$cameraBobOffset = new Vector3f();
 
     @Inject(method = "renderLevel", at = @At("HEAD"))
-    public void renderLevelStart(CallbackInfo ci) {
+    public void renderLevelStart(DeltaTracker deltaTracker, CallbackInfo ci) {
         if (!this.minecraft.options.bobView().get()) {
             VeilRenderSystem.setCameraBobOffset(this.veil$cameraBobOffset.set(0));
         }
     }
 
     @Inject(method = "bobView", at = @At("HEAD"))
-    public void bobViewSetup(CallbackInfo ci) {
+    public void bobViewSetup(PoseStack poseStack, float partialTick, CallbackInfo ci) {
         this.veil$cameraBobOffset.set(0);
     }
 
     @Inject(method = "bobView", at = @At("TAIL"))
-    public void bobViewClear(CallbackInfo ci) {
+    public void bobViewClear(PoseStack poseStack, float partialTick, CallbackInfo ci) {
         VeilRenderSystem.setCameraBobOffset(this.veil$cameraBobOffset);
     }
 
@@ -58,7 +60,7 @@ public class PipelineGameRendererMixin {
     }
 
     @Inject(method = "resize", at = @At(value = "TAIL"))
-    public void resizeListener(CallbackInfo ci) {
+    public void resizeListener(int width, int height, CallbackInfo ci) {
         // Use the main render target instead of the actual screen size, so any mod that changes resolutions doesn't break
         RenderTarget renderTarget = Minecraft.getInstance().getMainRenderTarget();
         VeilRenderSystem.resize(renderTarget.width, renderTarget.height);
@@ -70,14 +72,14 @@ public class PipelineGameRendererMixin {
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;doEntityOutline()V", shift = At.Shift.AFTER))
-    public void renderPost(CallbackInfo ci) {
+    public void renderPost(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo ci) {
         if (!VeilLevelPerspectiveRenderer.isRenderingPerspective()) {
             VeilRenderSystem.renderPost(null);
         }
     }
 
-    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/Lighting;setupFor3DItems()V", shift = At.Shift.AFTER))
-    public void updateGuiCamera(CallbackInfo ci) {
+    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/Lighting;setupFor(Lcom/mojang/blaze3d/platform/Lighting$Entry;)V", shift = At.Shift.AFTER))
+    public void updateGuiCamera(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo ci) {
         if (Veil.platform().hasErrors()) {
             return;
         }
@@ -86,7 +88,7 @@ public class PipelineGameRendererMixin {
     }
 
     @Inject(method = "render", at = @At("TAIL"))
-    public void unbindGuiCamera(CallbackInfo ci) {
+    public void unbindGuiCamera(DeltaTracker deltaTracker, boolean renderLevel, CallbackInfo ci) {
         if (Veil.platform().hasErrors()) {
             return;
         }
@@ -94,18 +96,18 @@ public class PipelineGameRendererMixin {
         VeilRenderSystem.renderer().getGuiInfo().unbind();
     }
 
-    @Redirect(method = "renderLevel", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;clear(IZ)V", remap = false))
-    public void bindFirstPerson(int mask, boolean checkError) {
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;renderItemInHand(FZLorg/joml/Matrix4f;)V", shift = At.Shift.BEFORE))
+    public void bindFirstPerson(DeltaTracker deltaTracker, CallbackInfo ci) {
         // Don't try to run first person processing if the hand is hidden
-        if (!this.panoramicMode && (IrisCompat.INSTANCE == null || !IrisCompat.INSTANCE.areShadersLoaded())) {
-            VeilFirstPersonRenderer.bind(mask);
+        if (!this.isPanoramicMode() && (IrisCompat.INSTANCE == null || !IrisCompat.INSTANCE.areShadersLoaded())) {
+            VeilFirstPersonRenderer.bind();
         }
     }
 
-    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;renderItemInHand(Lnet/minecraft/client/Camera;FLorg/joml/Matrix4f;)V", shift = At.Shift.AFTER))
-    public void unbindFirstPerson(CallbackInfo ci) {
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;renderItemInHand(FZLorg/joml/Matrix4f;)V", shift = At.Shift.AFTER))
+    public void unbindFirstPerson(DeltaTracker deltaTracker, CallbackInfo ci) {
         // Don't try to run first person processing if the hand is hidden
-        if (!this.panoramicMode && (IrisCompat.INSTANCE == null || !IrisCompat.INSTANCE.areShadersLoaded())) {
+        if (!this.isPanoramicMode() && (IrisCompat.INSTANCE == null || !IrisCompat.INSTANCE.areShadersLoaded())) {
             VeilFirstPersonRenderer.unbind();
         }
     }

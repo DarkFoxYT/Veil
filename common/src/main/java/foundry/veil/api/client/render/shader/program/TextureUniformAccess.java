@@ -1,6 +1,7 @@
 package foundry.veil.api.client.render.shader.program;
 
 import foundry.veil.api.client.render.ext.VeilMultiBind;
+import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.framebuffer.AdvancedFboTextureAttachment;
 import foundry.veil.api.client.render.shader.texture.ShaderTextureSource;
@@ -9,7 +10,7 @@ import foundry.veil.impl.client.render.shader.program.ShaderProgramImpl;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +31,11 @@ public interface TextureUniformAccess {
      *
      * @param framebuffer The framebuffer to bind samplers from
      */
-    default void setFramebufferSamplers(AdvancedFbo framebuffer) {
+    default void setFramebufferSamplers(@Nullable AdvancedFbo framebuffer) {
+        if (framebuffer == null) {
+            return;
+        }
+
         boolean setDiffuseSampler = false;
         for (int i = 0; i < framebuffer.getColorAttachments(); i++) {
             if (!framebuffer.isColorTextureAttachment(i)) {
@@ -64,7 +69,7 @@ public interface TextureUniformAccess {
      * @param location The name of the texture in the texture manager to bind and assign a texture unit
      * @since 3.6.0
      */
-    default void setTexture(CharSequence name, ResourceLocation location) {
+    default void setTexture(CharSequence name, Identifier location) {
         this.setTexture(name, Minecraft.getInstance().getTextureManager().getTexture(location));
     }
 
@@ -76,7 +81,7 @@ public interface TextureUniformAccess {
      * @param samplerId The id of the sampler assign a texture unit
      * @since 3.6.0
      */
-    default void setTexture(CharSequence name, ResourceLocation location, int samplerId) {
+    default void setTexture(CharSequence name, Identifier location, int samplerId) {
         this.setTexture(name, Minecraft.getInstance().getTextureManager().getTexture(location), samplerId);
     }
 
@@ -88,7 +93,7 @@ public interface TextureUniformAccess {
      * @since 3.6.0
      */
     default void setTexture(CharSequence name, AbstractTexture texture) {
-        this.setTexture(name, ((AbstractTextureExtension) texture).getTextureTarget(), texture.getId(), 0);
+        this.setTexture(name, ((AbstractTextureExtension) texture).getTextureTarget(), VeilRenderSystem.getTextureId(texture), 0);
     }
 
     /**
@@ -100,7 +105,7 @@ public interface TextureUniformAccess {
      * @since 3.6.0
      */
     default void setTexture(CharSequence name, AbstractTexture texture, int samplerId) {
-        this.setTexture(name, ((AbstractTextureExtension) texture).getTextureTarget(), texture.getId(), samplerId);
+        this.setTexture(name, ((AbstractTextureExtension) texture).getTextureTarget(), VeilRenderSystem.getTextureId(texture), samplerId);
     }
 
     /**
@@ -163,7 +168,11 @@ public interface TextureUniformAccess {
      *
      * @param framebuffer The framebuffer to bind samplers from
      */
-    static void setFramebufferSamplers(ShaderInstance instance, AdvancedFbo framebuffer) {
+    static void setFramebufferSamplers(ShaderInstance instance, @Nullable AdvancedFbo framebuffer) {
+        if (framebuffer == null) {
+            return;
+        }
+
         if (instance instanceof ShaderProgramImpl.Wrapper wrapper) {
             wrapper.program().setFramebufferSamplers(framebuffer);
             return;

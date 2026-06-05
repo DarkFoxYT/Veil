@@ -7,7 +7,7 @@ import foundry.veil.platform.registry.RegistrationProvider;
 import foundry.veil.platform.registry.RegistryObject;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -47,10 +47,10 @@ public final class RenderTypeLayerRegistry {
     }
 
     private static <T extends RenderTypeLayer> RegistryObject<LayerType<T>> register(String name, MapCodec<T> codec) {
-        return VANILLA_PROVIDER.register(ResourceLocation.withDefaultNamespace(name), () -> new LayerType<>(codec));
+        return VANILLA_PROVIDER.register(Identifier.withDefaultNamespace(name), () -> new LayerType<>(codec));
     }
 
-    private static <T extends RenderTypeLayer> RegistryObject<LayerType<T>> register(ResourceLocation id, MapCodec<T> codec) {
+    private static <T extends RenderTypeLayer> RegistryObject<LayerType<T>> register(Identifier id, MapCodec<T> codec) {
         return VANILLA_PROVIDER.register(id, () -> new LayerType<>(codec));
     }
 

@@ -1,5 +1,7 @@
 package foundry.veil.fabric.mixin.client.perspective.vanilla;
 
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.llamalad7.mixinextras.sugar.Local;
 import foundry.veil.impl.client.render.perspective.LevelPerspectiveCamera;
 import foundry.veil.impl.client.render.perspective.VeilSectionOcclusionGraph;
@@ -8,17 +10,17 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.util.Mth;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -54,7 +56,7 @@ public abstract class LevelRendererMixin {
     @Unique
     private ObjectArrayList<SectionRenderDispatcher.RenderSection> veil$backupVisibleSections;
 
-    @Inject(method = "setupRender", at = @At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiling/ProfilerFiller;push(Ljava/lang/String;)V", shift = At.Shift.AFTER, args = "ldc=camera"), cancellable = true)
+    @Inject(method = "setupRender", at = @At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiling/ProfilerFiller;push(Ljava/lang/String;)V", shift = At.Shift.AFTER, args = "ldc=camera"), cancellable = true, require = 0)
     public void setupRender(Camera camera, Frustum frustum, boolean hasCapturedFrustum, boolean isSpectator, CallbackInfo ci, @Local Vec3 cameraPos) {
         if (!(camera instanceof LevelPerspectiveCamera perspectiveCamera)) {
             return;
@@ -63,8 +65,7 @@ public abstract class LevelRendererMixin {
         ci.cancel();
 
         Entity.setViewScale(Mth.clamp(perspectiveCamera.getRenderDistance() / 8.0, 1.0, 2.5));
-        this.sectionRenderDispatcher.setCamera(cameraPos);
-        ProfilerFiller profiler = this.minecraft.getProfiler();
+        ProfilerFiller profiler = Profiler.get();
         profiler.push("veil_section_occlusion_graph");
         this.veil$visibleSections.clear();
         this.veil$perspectiveOcclusionGraph.update(Objects.requireNonNull(this.viewArea), this.minecraft.smartCull, perspectiveCamera, frustum, this.veil$visibleSections);
@@ -76,7 +77,7 @@ public abstract class LevelRendererMixin {
     }
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
-    public void resetSections(DeltaTracker deltaTracker, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f frustumMatrix, Matrix4f projectionMatrix, CallbackInfo ci) {
+    public void resetSections(GraphicsResourceAllocator allocator, DeltaTracker deltaTracker, boolean renderBlockOutline, Camera camera, Matrix4f frustumMatrix, Matrix4f projectionMatrix, Matrix4f poseMatrix, GpuBufferSlice fogBuffer, Vector4f clearColor, boolean shouldRenderSky, CallbackInfo ci) {
         if (camera instanceof LevelPerspectiveCamera) {
             Entity.setViewScale(Mth.clamp((double) this.minecraft.options.getEffectiveRenderDistance() / 8.0, 1.0, 2.5) * this.minecraft.options.entityDistanceScaling().get());
             this.visibleSections = this.veil$backupVisibleSections;

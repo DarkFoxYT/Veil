@@ -39,6 +39,5 @@ public class Cube implements EmitterShape {
         float x = dimensions.x();
         float y = dimensions.y();
         float z = dimensions.z();
-        LevelRenderer.renderLineBox(stack, consumer, new AABB(-x, -y, -z, x, y, z), 0.15f, 0.15f, 1, 1);
     }
 }

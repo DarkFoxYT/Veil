@@ -19,7 +19,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMaps;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.ApiStatus;
@@ -131,26 +131,15 @@ public class Skin implements NativeResource {
         this.vertexArray.bind();
         VeilRenderSystem.bind("NecromancerBones", boneBlock);
 
-        // TODO query uniform block size
-        renderType.setupRenderState();
         this.render();
-        renderType.clearRenderState();
-
-        if (renderType instanceof VeilRenderType.LayeredRenderType layeredRenderType) {
-            for (RenderType layer : layeredRenderType.getLayers()) {
-                layer.setupRenderState();
-                this.render();
-                layer.clearRenderState();
-            }
-        }
 
         VeilRenderSystem.unbind(boneBlock);
     }
 
     private void render() {
-        ShaderInstance shader = RenderSystem.getShader();
+        ShaderInstance shader = null;
         if (shader != null) {
-            shader.setDefaultUniforms(VertexFormat.Mode.TRIANGLES, RenderSystem.getModelViewMatrix(), RenderSystem.getProjectionMatrix(), Minecraft.getInstance().getWindow());
+            shader.setDefaultUniforms(VertexFormat.Mode.TRIANGLES, RenderSystem.getModelViewMatrix(), new Matrix4f(), Minecraft.getInstance().getWindow());
             shader.apply();
 
             Uniform uniform = shader.getUniform("NecromancerBoneCount");
@@ -175,7 +164,7 @@ public class Skin implements NativeResource {
     }
 
     public static VertexArray createVertexArray() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         VertexArray vertexArray = VertexArray.create();
 
         int vbo = vertexArray.getOrCreateBuffer(VertexArray.VERTEX_BUFFER);

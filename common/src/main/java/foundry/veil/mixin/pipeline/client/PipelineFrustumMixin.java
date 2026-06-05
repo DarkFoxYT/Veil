@@ -49,9 +49,6 @@ public abstract class PipelineFrustumMixin implements CullFrustum {
     @Shadow
     public abstract boolean isVisible(AABB aABB);
 
-    @Shadow
-    protected abstract boolean cubeInFrustum(double d, double e, double f, double g, double h, double i);
-
     @Unique
     private final Vector3d veil$position = new Vector3d();
     @Unique
@@ -76,7 +73,7 @@ public abstract class PipelineFrustumMixin implements CullFrustum {
 
     @Override
     public boolean testAab(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
-        return this.cubeInFrustum(minX, minY, minZ, maxX, maxY, maxZ);
+        return this.isVisible(new AABB(minX, minY, minZ, maxX, maxY, maxZ));
     }
 
     @Override

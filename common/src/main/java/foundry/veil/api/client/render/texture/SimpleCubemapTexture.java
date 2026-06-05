@@ -1,15 +1,16 @@
 package foundry.veil.api.client.render.texture;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
+import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.mixin.pipeline.accessor.PipelineNativeImageAccessor;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.metadata.texture.TextureMetadataSection;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.NotNull;
@@ -35,10 +36,10 @@ public class SimpleCubemapTexture extends CubemapTexture implements VeilPreloade
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    protected final ResourceLocation location;
+    protected final Identifier location;
     private CompletableFuture<TextureImage> imageFuture;
 
-    public SimpleCubemapTexture(ResourceLocation location) {
+    public SimpleCubemapTexture(Identifier location) {
         this.location = location;
         this.imageFuture = null;
     }
@@ -51,7 +52,6 @@ public class SimpleCubemapTexture extends CubemapTexture implements VeilPreloade
         return this.imageFuture;
     }
 
-    @Override
     public void load(@NotNull ResourceManager resourceManager) throws IOException {
         TextureImage textureImages = this.getTextureImage(resourceManager);
         try (NativeImage image = textureImages.getImage()) {
@@ -65,16 +65,16 @@ public class SimpleCubemapTexture extends CubemapTexture implements VeilPreloade
             boolean blur;
             boolean clamp;
             if (texturemetadatasection != null) {
-                blur = texturemetadatasection.isBlur();
-                clamp = texturemetadatasection.isClamp();
+                blur = texturemetadatasection.blur();
+                clamp = texturemetadatasection.clamp();
             } else {
                 blur = false;
                 clamp = false;
             }
 
             this.setFilter(blur, clamp);
-            if (!RenderSystem.isOnRenderThreadOrInit()) {
-                RenderSystem.recordRenderCall(() -> this.loadImages(image));
+            if (!RenderSystem.isOnRenderThread()) {
+                VeilRenderSystem.renderThreadExecutor().execute(() -> this.loadImages(image));
             } else {
                 this.loadImages(image);
             }
@@ -87,13 +87,13 @@ public class SimpleCubemapTexture extends CubemapTexture implements VeilPreloade
             GlStateManager._texParameter(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0);
             GlStateManager._texParameter(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_LOD, 0);
             GlStateManager._texParameter(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LOD, 0);
-            GlStateManager._texParameter(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_LOD_BIAS, 0.0F);
+            org.lwjgl.opengl.GL11C.glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_LOD_BIAS, 0.0F);
 
             int tileSize = image.getWidth() / 4;
             PipelineNativeImageAccessor accessor = (PipelineNativeImageAccessor) (Object) image;
             accessor.invokeCheckAllocated();
             NativeImage.Format format = image.format();
-            format.setUnpackPixelStoreState();
+            VeilRenderSystem.setUnpackPixelStoreState(format);
             long pixels = accessor.getPixels();
 
             GlStateManager._pixelStore(GL_UNPACK_ROW_LENGTH, image.getWidth());
@@ -101,37 +101,36 @@ public class SimpleCubemapTexture extends CubemapTexture implements VeilPreloade
             // Top
             GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, tileSize);
             GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, 0);
-            glTexImage2D(getGlFace(Direction.UP), 0, GL_RGBA8, tileSize, tileSize, 0, format.glFormat(), GL_UNSIGNED_BYTE, pixels);
+            glTexImage2D(getGlFace(Direction.UP), 0, GL_RGBA8, tileSize, tileSize, 0, VeilRenderSystem.getGlFormat(format), GL_UNSIGNED_BYTE, pixels);
 
             // Left
             GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, 0);
             GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, tileSize);
-            glTexImage2D(getGlFace(Direction.WEST), 0, GL_RGBA8, tileSize, tileSize, 0, format.glFormat(), GL_UNSIGNED_BYTE, pixels);
+            glTexImage2D(getGlFace(Direction.WEST), 0, GL_RGBA8, tileSize, tileSize, 0, VeilRenderSystem.getGlFormat(format), GL_UNSIGNED_BYTE, pixels);
 
             // Front
             GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, tileSize);
             GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, tileSize);
-            glTexImage2D(getGlFace(Direction.SOUTH), 0, GL_RGBA8, tileSize, tileSize, 0, format.glFormat(), GL_UNSIGNED_BYTE, pixels);
+            glTexImage2D(getGlFace(Direction.SOUTH), 0, GL_RGBA8, tileSize, tileSize, 0, VeilRenderSystem.getGlFormat(format), GL_UNSIGNED_BYTE, pixels);
 
             // Right
             GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, tileSize * 2);
             GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, tileSize);
-            glTexImage2D(getGlFace(Direction.EAST), 0, GL_RGBA8, tileSize, tileSize, 0, format.glFormat(), GL_UNSIGNED_BYTE, pixels);
+            glTexImage2D(getGlFace(Direction.EAST), 0, GL_RGBA8, tileSize, tileSize, 0, VeilRenderSystem.getGlFormat(format), GL_UNSIGNED_BYTE, pixels);
 
             // Back
             GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, tileSize * 3);
             GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, tileSize);
-            glTexImage2D(getGlFace(Direction.NORTH), 0, GL_RGBA8, tileSize, tileSize, 0, format.glFormat(), GL_UNSIGNED_BYTE, pixels);
+            glTexImage2D(getGlFace(Direction.NORTH), 0, GL_RGBA8, tileSize, tileSize, 0, VeilRenderSystem.getGlFormat(format), GL_UNSIGNED_BYTE, pixels);
 
             // Down
             GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, tileSize);
             GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, tileSize * 2);
-            glTexImage2D(getGlFace(Direction.DOWN), 0, GL_RGBA8, tileSize, tileSize, 0, format.glFormat(), GL_UNSIGNED_BYTE, pixels);
+            glTexImage2D(getGlFace(Direction.DOWN), 0, GL_RGBA8, tileSize, tileSize, 0, VeilRenderSystem.getGlFormat(format), GL_UNSIGNED_BYTE, pixels);
         }
     }
 
-    @Override
-    public void reset(@NotNull TextureManager textureManager, @NotNull ResourceManager resourceManager, @NotNull ResourceLocation location, @NotNull Executor gameExecutor) {
+    public void reset(@NotNull TextureManager textureManager, @NotNull ResourceManager resourceManager, @NotNull Identifier location, @NotNull Executor gameExecutor) {
         this.preload(resourceManager, Util.backgroundExecutor()).thenRunAsync(() -> textureManager.register(location, this), gameExecutor);
     }
 
@@ -165,7 +164,7 @@ public class SimpleCubemapTexture extends CubemapTexture implements VeilPreloade
             this.image = image;
         }
 
-        public static TextureImage load(ResourceManager resourceManager, ResourceLocation location) {
+        public static TextureImage load(ResourceManager resourceManager, Identifier location) {
             try {
                 Resource resource = resourceManager.getResourceOrThrow(location);
 
@@ -177,7 +176,7 @@ public class SimpleCubemapTexture extends CubemapTexture implements VeilPreloade
                 TextureMetadataSection texturemetadatasection = null;
 
                 try {
-                    texturemetadatasection = resource.metadata().getSection(TextureMetadataSection.SERIALIZER).orElse(null);
+                    texturemetadatasection = resource.metadata().getSection(TextureMetadataSection.TYPE).orElse(null);
                 } catch (RuntimeException runtimeexception) {
                     LOGGER.warn("Failed reading metadata of: {}", location, runtimeexception);
                 }

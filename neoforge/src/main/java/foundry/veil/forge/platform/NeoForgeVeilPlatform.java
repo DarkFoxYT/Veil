@@ -19,12 +19,12 @@ public class NeoForgeVeilPlatform implements VeilPlatform {
 
     @Override
     public boolean isModLoaded(String modId) {
-        return FMLLoader.getLoadingModList().getModFileById(modId) != null;
+        return FMLLoader.getCurrent().getLoadingModList().getModFileById(modId) != null;
     }
 
     @Override
     public boolean isDevelopmentEnvironment() {
-        return !FMLLoader.isProduction();
+        return !FMLLoader.getCurrent().isProduction();
     }
 
     @Override

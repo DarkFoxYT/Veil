@@ -17,6 +17,10 @@ import static org.lwjgl.opengl.GL13C.*;
  */
 public abstract class CubemapTexture extends AbstractTexture implements AbstractTextureExtension {
 
+    protected int id = -1;
+    protected boolean blur;
+    protected boolean mipmap;
+
     /**
      * Converts the {@link Direction} value to the correct GL cubemap enum.
      *
@@ -34,9 +38,8 @@ public abstract class CubemapTexture extends AbstractTexture implements Abstract
         };
     }
 
-    @Override
     public void setFilter(boolean blur, boolean mipmap) {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         this.blur = blur;
         this.mipmap = mipmap;
         int minFilter;
@@ -60,9 +63,8 @@ public abstract class CubemapTexture extends AbstractTexture implements Abstract
         }
     }
 
-    @Override
     public int getId() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         if (this.id == -1) {
             this.id = VeilRenderSystem.createTextures(GL_TEXTURE_CUBE_MAP);
         }
@@ -70,7 +72,6 @@ public abstract class CubemapTexture extends AbstractTexture implements Abstract
         return this.id;
     }
 
-    @Override
     public void bind() {
         VeilRenderSystem.renderThreadExecutor().execute(() -> glBindTexture(GL_TEXTURE_CUBE_MAP, this.getId()));
     }

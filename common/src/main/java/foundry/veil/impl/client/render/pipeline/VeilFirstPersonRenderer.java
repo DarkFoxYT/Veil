@@ -12,14 +12,15 @@ import foundry.veil.api.client.render.post.PostProcessingManager;
 import foundry.veil.ext.RenderTargetExtension;
 import foundry.veil.impl.client.render.dynamicbuffer.DynamicBufferManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
 public final class VeilFirstPersonRenderer {
 
-    private static final ResourceLocation FIRST_PERSON = Veil.veilPath("core/first_person");
+    private static final Identifier FIRST_PERSON = Veil.veilPath("core/first_person");
 
     private static boolean printedError;
     private static AdvancedFbo firstPerson;
@@ -27,7 +28,7 @@ public final class VeilFirstPersonRenderer {
     private VeilFirstPersonRenderer() {
     }
 
-    public static void bind(int mask) {
+    public static void bind() {
         VeilDebug.get().pushDebugGroup("Veil First Person");
 
         AdvancedFbo mainRenderTarget = AdvancedFbo.getMainFramebuffer();
@@ -51,15 +52,19 @@ public final class VeilFirstPersonRenderer {
         dynamicBufferManager.setEnabled(false);
 
         VeilRenderSystem.renderer().getFramebufferManager().setFramebuffer(VeilFramebuffers.FIRST_PERSON, fbo);
-        fbo.clear(mask);
+        fbo.clearDepth();
         fbo.bind(false);
         // This redirects calls to the vanilla framebuffer to the first person buffer instead
         ((RenderTargetExtension) Minecraft.getInstance().getMainRenderTarget()).veil$setWrapper(fbo);
     }
 
     public static void unbind() {
+        if (firstPerson == null) {
+            return;
+        }
+
         // TODO update projection/modelview matrix
-        ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
+        ProfilerFiller profiler = Profiler.get();
         boolean rendered = VeilRenderSystem.drawLights(profiler, VeilRenderSystem.getCullingFrustum());
         ((RenderTargetExtension) Minecraft.getInstance().getMainRenderTarget()).veil$setWrapper(null);
 

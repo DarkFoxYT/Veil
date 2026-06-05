@@ -2,13 +2,13 @@ package foundry.veil.api.resource;
 
 import com.mojang.serialization.Lifecycle;
 import foundry.veil.mixin.registry.accessor.RegistryDataAccessor;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -45,29 +45,18 @@ public class VeilDynamicRegistry {
     @SuppressWarnings("RedundantOperationOnEmptyContainer")
     public static CompletableFuture<Data> loadRegistries(ResourceManager resourceManager, Collection<RegistryDataLoader.RegistryData<?>> registries, Executor executor) {
         Map<ResourceKey<?>, Exception> errors = new ConcurrentHashMap<>();
-        List<RegistryDataLoader.Loader<?>> loaders = registries.stream()
-                .<RegistryDataLoader.Loader<?>>map(data -> ((RegistryDataAccessor) (Object) data).invokeCreate(Lifecycle.stable(), errors))
-                .toList();
-        RegistryOps.RegistryInfoLookup ctx = RegistryDataLoader.createContext(RegistryAccess.EMPTY, loaders);
-        return Util.sequence(loaders.stream().map(loader -> CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             LOADING.set(true);
-            loader.loadFromResources(resourceManager, ctx);
-            LOADING.set(false);
-
-            Registry<?> registry = loader.registry();
-
             try {
-                registry.freeze();
+                RegistryAccess.Frozen registryAccess = RegistryDataLoader.load(resourceManager, List.of(), List.copyOf(registries));
+                return new Data(registryAccess, Collections.unmodifiableMap(errors));
             } catch (Exception e) {
-                errors.put(registry.key(), e);
+                errors.put(ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath("veil", "dynamic_registry")), e);
+                return new Data(RegistryAccess.EMPTY, Collections.unmodifiableMap(errors));
+            } finally {
+                LOADING.set(false);
             }
-
-            if (loader.data().requiredNonEmpty() && registry.size() == 0) {
-                errors.put(registry.key(), new IllegalStateException("Registry must be non-empty"));
-            }
-
-            return registry;
-        }, executor)).toList()).thenApply(list -> new Data(new RegistryAccess.ImmutableRegistryAccess(list).freeze(), Collections.unmodifiableMap(errors)));
+        }, executor);
     }
 
     /**
@@ -83,7 +72,7 @@ public class VeilDynamicRegistry {
 
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
-        Map<ResourceLocation, Map<ResourceLocation, Exception>> sortedErrors = errors.entrySet().stream().collect(Collectors.groupingBy(entry -> entry.getKey().registry(), Collectors.toMap(entry -> entry.getKey().location(), Map.Entry::getValue)));
+        Map<Identifier, Map<Identifier, Exception>> sortedErrors = errors.entrySet().stream().collect(Collectors.groupingBy(entry -> entry.getKey().registry(), Collectors.toMap(entry -> entry.getKey().identifier(), Map.Entry::getValue)));
         sortedErrors.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(registryError -> {
             printWriter.printf("%n> %d Errors in registry %s:", registryError.getValue().size(), registryError.getKey());
             registryError.getValue().entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(elementError -> {

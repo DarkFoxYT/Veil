@@ -1,9 +1,9 @@
 package foundry.veil.api.client.render.framebuffer;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.Veil;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector4i;
 import org.lwjgl.system.MemoryStack;
@@ -24,14 +24,14 @@ import static org.lwjgl.opengl.GL30C.*;
 public class FramebufferStack {
 
     private static final List<State> STATE_STACK = new ArrayList<>(1);
-    private static ResourceLocation lastPop;
+    private static Identifier lastPop;
 
     /**
      * Pushes the current framebuffer to the stack.
      *
      * @param name The name of the buffer to pop
      */
-    public static void push(@Nullable ResourceLocation name) {
+    public static void push(@Nullable Identifier name) {
         // Make sure this isn't called multiple times
         if (name != null && !STATE_STACK.isEmpty() && name.equals(STATE_STACK.getLast().name)) {
             return;
@@ -58,7 +58,7 @@ public class FramebufferStack {
      *
      * @param name The name of the buffer to pop
      */
-    public static void pop(@Nullable ResourceLocation name) {
+    public static void pop(@Nullable Identifier name) {
         // Make sure this isn't called multiple times in a row
         if (lastPop != null && lastPop.equals(name)) {
             return;
@@ -81,7 +81,7 @@ public class FramebufferStack {
         GlStateManager._glBindFramebuffer(GL_FRAMEBUFFER, state.framebuffer);
         GlStateManager._glBindFramebuffer(GL_READ_FRAMEBUFFER, state.readFramebuffer);
         GlStateManager._glBindFramebuffer(GL_DRAW_FRAMEBUFFER, state.drawFramebuffer);
-        RenderSystem.viewport(viewport.x, viewport.y, viewport.z, viewport.w);
+        GlStateManager._viewport(viewport.x, viewport.y, viewport.z, viewport.w);
     }
 
     /**
@@ -107,6 +107,6 @@ public class FramebufferStack {
             int framebuffer,
             int readFramebuffer,
             int drawFramebuffer,
-            @Nullable ResourceLocation name) {
+            @Nullable Identifier name) {
     }
 }

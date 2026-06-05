@@ -1,6 +1,10 @@
 package foundry.veil.mixin.pipeline.client;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+
+
+import com.mojang.blaze3d.platform.DestFactor;
+import com.mojang.blaze3d.platform.SourceFactor;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,6 +20,6 @@ public class PipelineParticleRenderTypeMixin {
      */
     @Redirect(method = "begin", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;defaultBlendFunc()V", remap = false))
     public void changeBlendFunction() {
-        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        GlStateManager._blendFuncSeparate(org.lwjgl.opengl.GL11C.GL_SRC_ALPHA, org.lwjgl.opengl.GL11C.GL_ONE_MINUS_SRC_ALPHA, org.lwjgl.opengl.GL11C.GL_ONE, org.lwjgl.opengl.GL11C.GL_ONE_MINUS_SRC_ALPHA);
     }
 }

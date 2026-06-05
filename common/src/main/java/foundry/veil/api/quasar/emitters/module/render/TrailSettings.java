@@ -10,7 +10,7 @@ import imgui.type.ImBoolean;
 import imgui.type.ImFloat;
 import imgui.type.ImInt;
 import imgui.type.ImString;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
@@ -22,7 +22,7 @@ public class TrailSettings {
             Codec.INT.optionalFieldOf("trailLength", 20).forGetter(settings -> settings.trailLength),
             CodecUtil.VECTOR4FC_CODEC.optionalFieldOf("trailColor", new Vector4f(1.0F)).forGetter(settings -> settings.trailColor),
             Codec.FLOAT.fieldOf("trailWidthModifier").forGetter(settings -> settings.trailWidthModifierFloat),
-            ResourceLocation.CODEC.fieldOf("trailTexture").forGetter(settings -> settings.trailTexture),
+            Identifier.CODEC.fieldOf("trailTexture").forGetter(settings -> settings.trailTexture),
             Codec.FLOAT.fieldOf("trailPointModifier").forGetter(settings -> 1.0F),
             Trail.TilingMode.CODEC.optionalFieldOf("tilingMode", Trail.TilingMode.STRETCH).forGetter(settings -> settings.tilingMode),
             Codec.BOOL.optionalFieldOf("billboard", true).forGetter(settings -> settings.billboard),
@@ -34,13 +34,13 @@ public class TrailSettings {
     private Vector4f trailColor;
     private TrailWidthModifier trailWidthModifier;
     private TrailPointModifier trailPointModifier;
-    private ResourceLocation trailTexture;
+    private Identifier trailTexture;
     private Trail.TilingMode tilingMode;
     private boolean billboard;
     private boolean parentRotation;
     private float trailWidthModifierFloat = 1f;
 
-    public TrailSettings(int trailFrequency, int trailLength, Vector4fc trailColor, TrailWidthModifier trailWidthModifier, ResourceLocation trailTexture, TrailPointModifier trailPointModifier, Trail.TilingMode tilingMode, boolean billboard, boolean parentRotation) {
+    public TrailSettings(int trailFrequency, int trailLength, Vector4fc trailColor, TrailWidthModifier trailWidthModifier, Identifier trailTexture, TrailPointModifier trailPointModifier, Trail.TilingMode tilingMode, boolean billboard, boolean parentRotation) {
         this.trailFrequency = trailFrequency;
         this.trailLength = trailLength;
         this.trailColor = new Vector4f(trailColor);
@@ -52,7 +52,7 @@ public class TrailSettings {
         this.parentRotation = parentRotation;
     }
 
-    private TrailSettings(int trailFrequency, int trailLength, Vector4fc trailColor, float trailWidthModifier, ResourceLocation trailTexture, float trailPointModifier, Trail.TilingMode tilingMode, boolean billboard, boolean parentRotation) {
+    private TrailSettings(int trailFrequency, int trailLength, Vector4fc trailColor, float trailWidthModifier, Identifier trailTexture, float trailPointModifier, Trail.TilingMode tilingMode, boolean billboard, boolean parentRotation) {
         this.trailFrequency = trailFrequency;
         this.trailLength = trailLength;
         this.trailColor = new Vector4f(trailColor);
@@ -112,7 +112,7 @@ public class TrailSettings {
         this.trailWidthModifier = trailWidthModifier;
     }
 
-    public void setTrailTexture(ResourceLocation trailTexture) {
+    public void setTrailTexture(Identifier trailTexture) {
         this.trailTexture = trailTexture;
     }
 
@@ -132,14 +132,14 @@ public class TrailSettings {
         return this.trailWidthModifier;
     }
 
-    public ResourceLocation getTrailTexture() {
+    public Identifier getTrailTexture() {
         return this.trailTexture;
     }
 
     public void renderImGuiSettings() {
         ImString trailTextureString = new ImString(this.trailTexture.toString());
         if (ImGui.inputText("Trail Texture" + this.hashCode(), trailTextureString)) {
-            this.trailTexture = ResourceLocation.parse(trailTextureString.get());
+            this.trailTexture = Identifier.parse(trailTextureString.get());
         }
 
         ImInt trailFrequencyInt = new ImInt(this.trailFrequency);

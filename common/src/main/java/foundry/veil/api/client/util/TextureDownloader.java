@@ -1,10 +1,10 @@
 package foundry.veil.api.client.util;
 
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
-import net.minecraft.resources.ResourceLocation;
+import foundry.veil.api.client.render.VeilRenderSystem;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
@@ -99,7 +99,7 @@ public final class TextureDownloader {
      * @return A future for when all texture levels have been downloaded and saved
      */
     public static CompletableFuture<?> save(String name, Path outputFolder, AbstractTexture texture, boolean flip) {
-        return save(name, outputFolder, texture.getId(), flip);
+        return save(name, outputFolder, VeilRenderSystem.getTextureId(texture), flip);
     }
 
     /**
@@ -111,8 +111,8 @@ public final class TextureDownloader {
      * @param flip         Whether to flip the image on write
      * @return A future for when all texture levels have been downloaded and saved
      */
-    public static CompletableFuture<?> save(String name, Path outputFolder, ResourceLocation texture, boolean flip) {
+    public static CompletableFuture<?> save(String name, Path outputFolder, Identifier texture, boolean flip) {
         AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(texture);
-        return save(name, outputFolder, abstractTexture != null ? abstractTexture : MissingTextureAtlasSprite.getTexture(), flip);
+        return save(name, outputFolder, abstractTexture != null ? VeilRenderSystem.getTextureId(abstractTexture) : VeilRenderSystem.getMissingTextureId(), flip);
     }
 }

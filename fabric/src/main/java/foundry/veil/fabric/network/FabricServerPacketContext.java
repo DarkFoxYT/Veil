@@ -26,7 +26,7 @@ public record FabricServerPacketContext(ServerPlayNetworking.Context context) im
 
     @Override
     public void sendPacket(Packet<?> packet, @Nullable PacketSendListener callback) {
-        this.context.responseSender().sendPacket(packet, callback);
+        this.context.responseSender().sendPacket(packet, null);
     }
 
     @Override

@@ -4,6 +4,8 @@ import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.impl.client.imgui.VeilImGuiCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.MouseButtonInfo;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,9 +22,9 @@ public class MouseHandlerMixin {
     @Final
     private Minecraft minecraft;
 
-    @Inject(method = "onPress", at = @At("HEAD"))
-    public void keyPress(long window, int button, int action, int mods, CallbackInfo ci) {
-        if (window == this.minecraft.getWindow().getWindow() && action == GLFW_PRESS && VeilImGuiCompat.EDITOR_KEY.matchesMouse(button)) {
+    @Inject(method = "onButton", at = @At("HEAD"))
+    public void keyPress(long window, MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
+        if (window == this.minecraft.getWindow().handle() && action == GLFW_PRESS && VeilImGuiCompat.EDITOR_KEY.matchesMouse(new MouseButtonEvent(0, 0, buttonInfo))) {
             VeilRenderSystem.renderer().getEditorManager().toggle();
         }
     }

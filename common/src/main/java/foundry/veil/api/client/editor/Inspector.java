@@ -2,7 +2,7 @@ package foundry.veil.api.client.editor;
 
 import foundry.veil.api.client.render.VeilRenderSystem;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.system.NativeResource;
 
 /**
@@ -87,7 +87,7 @@ public interface Inspector extends NativeResource {
     default void free() {
     }
 
-    static Component group(ResourceLocation id) {
+    static Component group(Identifier id) {
         return Component.translatable("editor_group." + id.getNamespace() + "." + id.getPath());
     }
 }

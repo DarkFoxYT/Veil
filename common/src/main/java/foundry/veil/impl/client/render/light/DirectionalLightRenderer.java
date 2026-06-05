@@ -12,9 +12,9 @@ import foundry.veil.api.client.render.light.renderer.LightRenderer;
 import foundry.veil.api.client.render.light.renderer.LightTypeRenderer;
 import foundry.veil.api.client.render.rendertype.VeilRenderType;
 import foundry.veil.api.client.render.vertex.VertexArray;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector3f;
 
@@ -26,7 +26,7 @@ import java.util.List;
 public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLightData> {
 
     private static final Vector3f DIRECTION = new Vector3f();
-    private static final ResourceLocation RENDER_TYPE = Veil.veilPath("light/directional");
+    private static final Identifier RENDER_TYPE = Veil.veilPath("light/directional");
 
     private final List<LightHandle> lights;
     private final VertexArray vertexArray;
@@ -42,7 +42,7 @@ public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLi
     }
 
     private static MeshData createMesh() {
-        Tesselator tesselator = RenderSystem.renderThreadTesselator();
+        Tesselator tesselator = Tesselator.getInstance();
         BufferBuilder bufferBuilder = tesselator.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION);
         LightTypeRenderer.createQuad(bufferBuilder);
         return bufferBuilder.buildOrThrow();
@@ -83,17 +83,10 @@ public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLi
         this.vertexArray.setup(renderType);
         this.render();
         this.vertexArray.clear(renderType);
-        if (renderType instanceof VeilRenderType.LayeredRenderType layeredRenderType) {
-            for (RenderType layer : layeredRenderType.getLayers()) {
-                this.vertexArray.setup(layer);
-                this.render();
-                this.vertexArray.clear(layer);
-            }
-        }
     }
 
     private void render() {
-        ShaderInstance shader = RenderSystem.getShader();
+        ShaderInstance shader = null;
         if (shader == null) {
             return;
         }

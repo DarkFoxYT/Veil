@@ -10,7 +10,7 @@ import foundry.veil.impl.client.render.LayoutSerializer;
 import foundry.veil.impl.client.render.shader.block.LayoutShaderBlockImpl;
 import foundry.veil.impl.client.render.shader.block.ShaderBlockImpl;
 import foundry.veil.impl.client.render.shader.program.ShaderProgramImpl;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.NativeResource;
@@ -30,7 +30,7 @@ public class VeilShaderBufferCache implements NativeResource {
     private LayoutShaderBlockImpl<?>[] values;
     private VeilShaderBufferLayout<?>[] layouts;
 
-    public void onShaderCompile(Map<ResourceLocation, ShaderProgram> updatedPrograms) {
+    public void onShaderCompile(Map<Identifier, ShaderProgram> updatedPrograms) {
         if (this.layouts == null) {
             this.layouts = VeilShaderBufferRegistry.REGISTRY.stream().toArray(VeilShaderBufferLayout[]::new);
             this.values = new LayoutShaderBlockImpl[this.layouts.length];
@@ -45,7 +45,7 @@ public class VeilShaderBufferCache implements NativeResource {
         for (int i = 0; i < this.values.length; i++) {
             LayoutShaderBlockImpl<?> block = this.values[i];
             if (block != null) {
-                Set<ResourceLocation> shaders = block.getReferencedShaders();
+                Set<Identifier> shaders = block.getReferencedShaders();
                 if (shaders.removeAll(updatedPrograms.keySet()) && shaders.isEmpty()) {
                     // Since no old shaders reference it anymore, delete it and allow it to be created again
                     block.free();
@@ -85,9 +85,9 @@ public class VeilShaderBufferCache implements NativeResource {
                 if (block == null) {
                     continue;
                 }
-                Set<ResourceLocation> shaders = block.getReferencedShaders();
+                Set<Identifier> shaders = block.getReferencedShaders();
                 if (shaders.size() != 1) {
-                    String error = shaders.stream().map(ResourceLocation::toString).collect(Collectors.joining(", "));
+                    String error = shaders.stream().map(Identifier::toString).collect(Collectors.joining(", "));
                     Veil.LOGGER.error("Shader Block {} uses the 'packed' memory layout and only supports a single shader using the block. Either use a different format or only use the block in one shader. Affected shaders: {}", name, error);
                 }
             }

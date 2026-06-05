@@ -4,9 +4,9 @@ import com.mojang.serialization.MapCodec;
 import foundry.veil.api.client.registry.RenderTypeLayerRegistry;
 import foundry.veil.api.client.render.VeilRenderBridge;
 import foundry.veil.api.client.render.rendertype.VeilRenderTypeBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public record VeilShaderLayer(LayerTemplateValue<ResourceLocation> shaderId) implements RenderTypeLayer {
+public record VeilShaderLayer(LayerTemplateValue<Identifier> shaderId) implements RenderTypeLayer {
 
     public static final MapCodec<VeilShaderLayer> CODEC = LayerTemplateValue.LOCATION_CODEC
             .fieldOf("name")

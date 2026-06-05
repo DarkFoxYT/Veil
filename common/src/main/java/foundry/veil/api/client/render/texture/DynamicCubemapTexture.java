@@ -1,8 +1,9 @@
 package foundry.veil.api.client.render.texture;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
+import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.mixin.pipeline.accessor.PipelineNativeImageAccessor;
 import net.minecraft.core.Direction;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -33,7 +34,7 @@ public class DynamicCubemapTexture extends CubemapTexture {
     private void init(int face, int width, int height) {
         this.width[face] = width;
         this.height[face] = height;
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0L);
     }
 
@@ -49,9 +50,9 @@ public class DynamicCubemapTexture extends CubemapTexture {
         GlStateManager._texParameter(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0);
         GlStateManager._texParameter(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_LOD, 0);
         GlStateManager._texParameter(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LOD, 0);
-        GlStateManager._texParameter(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_LOD_BIAS, 0.0F);
+        org.lwjgl.opengl.GL11C.glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_LOD_BIAS, 0.0F);
 
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         for (int i = 0; i < 6; i++) {
             this.init(i, width, height);
         }
@@ -67,16 +68,16 @@ public class DynamicCubemapTexture extends CubemapTexture {
 
         int width = image.getWidth();
         int height = image.getHeight();
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         PipelineNativeImageAccessor accessor = (PipelineNativeImageAccessor) (Object) image;
         accessor.invokeCheckAllocated();
         GlStateManager._pixelStore(GL_UNPACK_ROW_LENGTH, 0);
         GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, 0);
         GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, 0);
         NativeImage.Format format = image.format();
-        format.setUnpackPixelStoreState();
+        VeilRenderSystem.setUnpackPixelStoreState(format);
         for (int i = 0; i < 6; i++) {
-            GlStateManager._texSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, width, height, format.glFormat(), GL_UNSIGNED_BYTE, accessor.getPixels());
+            GlStateManager._texSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, width, height, VeilRenderSystem.getGlFormat(format), GL_UNSIGNED_BYTE, accessor.getPixels());
         }
     }
 
@@ -107,18 +108,17 @@ public class DynamicCubemapTexture extends CubemapTexture {
 
         int width = image.getWidth();
         int height = image.getHeight();
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         PipelineNativeImageAccessor accessor = (PipelineNativeImageAccessor) (Object) image;
         accessor.invokeCheckAllocated();
         GlStateManager._pixelStore(GL_UNPACK_ROW_LENGTH, 0);
         GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, 0);
         GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, 0);
         NativeImage.Format format = image.format();
-        format.setUnpackPixelStoreState();
-        GlStateManager._texSubImage2D(face, 0, 0, 0, width, height, format.glFormat(), GL_UNSIGNED_BYTE, accessor.getPixels());
+        VeilRenderSystem.setUnpackPixelStoreState(format);
+        GlStateManager._texSubImage2D(face, 0, 0, 0, width, height, VeilRenderSystem.getGlFormat(format), GL_UNSIGNED_BYTE, accessor.getPixels());
     }
 
-    @Override
     public void load(ResourceManager resourceManager) throws IOException {
     }
 }

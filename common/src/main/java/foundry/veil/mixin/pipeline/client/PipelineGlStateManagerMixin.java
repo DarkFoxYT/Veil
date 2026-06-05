@@ -2,7 +2,7 @@ package foundry.veil.mixin.pipeline.client;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,8 +27,4 @@ public class PipelineGlStateManagerMixin {
         return VeilRenderSystem.directStateAccessSupported() ? glCreateFramebuffers() : original.call();
     }
 
-    @WrapOperation(method = "glGenRenderbuffers", at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/GL30;glGenRenderbuffers()I", remap = false), remap = false)
-    private static int glGenRenderbuffers(Operation<Integer> original) {
-        return VeilRenderSystem.directStateAccessSupported() ? glCreateRenderbuffers() : original.call();
-    }
 }

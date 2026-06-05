@@ -21,7 +21,7 @@ import net.caffeinemc.mods.sodium.client.render.chunk.shader.ChunkShaderInterfac
 import net.caffeinemc.mods.sodium.client.render.chunk.shader.ChunkShaderOptions;
 import net.caffeinemc.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
 import net.minecraft.core.SectionPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,16 +48,16 @@ public class VeilForgeSodiumCompat implements SodiumCompat {
     }
 
     @Override
-    public Object2IntMap<ResourceLocation> getLoadedShaders() {
+    public Object2IntMap<Identifier> getLoadedShaders() {
         SodiumWorldRenderer worldRenderer = SodiumWorldRenderer.instanceNullable();
         if (worldRenderer != null) {
             RenderSectionManagerAccessor renderSectionManager = (RenderSectionManagerAccessor) ((SodiumWorldRendererAccessor) worldRenderer).getRenderSectionManager();
             if (renderSectionManager != null && renderSectionManager.getChunkRenderer() instanceof ShaderChunkRendererExtension extension) {
-                Object2IntMap<ResourceLocation> shaders = new Object2IntArrayMap<>(extension.veil$getPrograms().size());
+                Object2IntMap<Identifier> shaders = new Object2IntArrayMap<>(extension.veil$getPrograms().size());
 
                 for (Map.Entry<ChunkShaderOptions, GlProgram<ChunkShaderInterface>> entry : extension.veil$getPrograms().entrySet()) {
                     StringBuilder name = getShaderName(entry.getKey());
-                    shaders.put(ResourceLocation.fromNamespaceAndPath("sodium", name.toString()), entry.getValue().handle());
+                    shaders.put(Identifier.fromNamespaceAndPath("sodium", name.toString()), entry.getValue().handle());
                 }
                 return shaders;
             }

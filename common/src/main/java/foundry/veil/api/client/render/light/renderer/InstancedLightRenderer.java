@@ -1,5 +1,7 @@
 package foundry.veil.api.client.render.light.renderer;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.MeshData;
 import foundry.veil.api.client.render.CullFrustum;
@@ -7,7 +9,7 @@ import foundry.veil.api.client.render.light.InstancedLightData;
 import foundry.veil.api.client.render.light.data.LightData;
 import foundry.veil.api.client.render.vertex.VertexArray;
 import foundry.veil.api.client.render.vertex.VertexArrayBuilder;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
 
@@ -173,7 +175,7 @@ public abstract class InstancedLightRenderer<T extends LightData & InstancedLigh
             return;
         }
 
-        RenderSystem.glBindBuffer(GL_ARRAY_BUFFER, this.instancedVbo);
+        GlStateManager._glBindBuffer(GL_ARRAY_BUFFER, this.instancedVbo);
 
         boolean resized = false;
 

@@ -102,12 +102,10 @@ public class PipelineStatisticsViewer implements Inspector {
                             ImPlot.setupAxesLimits(0, HISTORY_LENGTH, 0, Math.max(max * 1.1, 10), ImPlotCond.Always);
                             ImPlot.setupAxisFormat(ImPlotAxis.Y1, "%3.0f");
 
-                            ImPlot.pushStyleColor(ImPlotCol.Line, VeilImGuiUtil.colorOf(statistic.name()));
                             ImPlot.pushStyleVar(ImPlotStyleVar.PlotPadding, 0.0F, 0.0F);
                             ImPlot.pushStyleVar(ImPlotStyleVar.LabelPadding, 0.0F, 0.0F);
                             ImPlot.plotLine(statistic.name(), values);
                             ImPlot.popStyleVar();
-                            ImPlot.popStyleColor();
 
                             ImPlot.endPlot();
                         }

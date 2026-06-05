@@ -8,7 +8,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.core.Direction;
 import org.joml.Matrix3f;
-import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -36,7 +36,7 @@ public abstract class PipelineShaderInstanceMixin {
     public abstract Uniform getUniform(String name);
 
     @Inject(method = "setDefaultUniforms", at = @At("TAIL"))
-    public void setDefaultUniforms(VertexFormat.Mode mode, Matrix4f projectionMatrix, Matrix4f frustrumMatrix, Window window, CallbackInfo ci) {
+    public void setDefaultUniforms(VertexFormat.Mode mode, Matrix4fc modelViewMatrix, Matrix4fc projectionMatrix, Window window, CallbackInfo ci) {
         Uniform renderTime = this.getUniform("VeilRenderTime");
         if (renderTime != null) {
             renderTime.set((System.currentTimeMillis() % 3_600_000) / 1000.0F);
@@ -44,7 +44,7 @@ public abstract class PipelineShaderInstanceMixin {
 
         Uniform normalMat = this.getUniform("NormalMat");
         if (normalMat != null) {
-            normalMat.set(projectionMatrix.normal(veil$NORMAL_MATRIX));
+            normalMat.set(modelViewMatrix.normal(veil$NORMAL_MATRIX));
         }
 
         ClientLevel level = Minecraft.getInstance().level;

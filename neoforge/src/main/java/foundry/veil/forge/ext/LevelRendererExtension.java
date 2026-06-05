@@ -1,6 +1,6 @@
 package foundry.veil.forge.ext;
 
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix4fc;
 

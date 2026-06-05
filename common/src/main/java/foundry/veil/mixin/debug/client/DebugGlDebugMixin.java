@@ -1,6 +1,6 @@
 package foundry.veil.mixin.debug.client;
 
-import com.mojang.blaze3d.platform.GlDebug;
+import com.mojang.blaze3d.opengl.GlDebug;
 import foundry.veil.VeilDebugHooks;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.spongepowered.asm.mixin.Mixin;

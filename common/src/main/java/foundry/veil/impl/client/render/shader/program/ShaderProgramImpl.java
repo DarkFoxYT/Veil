@@ -2,7 +2,7 @@ package foundry.veil.impl.client.render.shader.program;
 
 import com.google.common.base.Suppliers;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.shaders.Program;
 import com.mojang.blaze3d.shaders.Shader;
 import com.mojang.blaze3d.shaders.Uniform;
@@ -40,7 +40,7 @@ import it.unimi.dsi.fastutil.objects.ObjectSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.server.packs.resources.Resource;
@@ -82,7 +82,7 @@ public class ShaderProgramImpl implements ShaderProgram {
     private static int srcAlphaFactor = -1;
     private static int dstAlphaFactor = -1;
 
-    private final ResourceLocation name;
+    private final Identifier name;
     private final ShaderTextureCache textures;
     private final Int2ObjectMap<CompiledProgram> programs;
     private final Object2ObjectMap<String, ShaderTexture> definitionSamplers;
@@ -96,7 +96,7 @@ public class ShaderProgramImpl implements ShaderProgram {
     private CompiledProgram compiledProgram;
     private boolean validated;
 
-    public ShaderProgramImpl(ResourceLocation name) {
+    public ShaderProgramImpl(Identifier name) {
         this.name = name;
         this.textures = new ShaderTextureCache(this);
         this.programs = new Int2ObjectArrayMap<>(1);
@@ -187,10 +187,10 @@ public class ShaderProgramImpl implements ShaderProgram {
     }
 
     protected void attachShaders(CompiledProgram compiledProgram, ShaderSourceSet sourceSet, ShaderCompiler compiler) throws ShaderException, IOException {
-        Int2ObjectMap<ResourceLocation> shaders = this.definition.shaders();
-        for (Int2ObjectMap.Entry<ResourceLocation> entry : shaders.int2ObjectEntrySet()) {
+        Int2ObjectMap<Identifier> shaders = this.definition.shaders();
+        for (Int2ObjectMap.Entry<Identifier> entry : shaders.int2ObjectEntrySet()) {
             int glType = entry.getIntKey();
-            ResourceLocation source = entry.getValue();
+            Identifier source = entry.getValue();
             compiledProgram.attachShader(glType, compiler.compile(glType, sourceSet.getTypeConverter(glType).idToFile(source)));
         }
 
@@ -331,7 +331,7 @@ public class ShaderProgramImpl implements ShaderProgram {
     }
 
     @Override
-    public ResourceLocation getName() {
+    public Identifier getName() {
         return this.name;
     }
 
@@ -456,7 +456,7 @@ public class ShaderProgramImpl implements ShaderProgram {
                                   Set<String> definitionDependencies,
                                   int activeBuffers) implements NativeResource {
 
-        public static CompiledProgram create(ResourceLocation id, int activeBuffers) {
+        public static CompiledProgram create(Identifier id, int activeBuffers) {
             int program = glCreateProgram();
             VeilDebug.get().objectLabel(GL_PROGRAM, program, "Shader Program " + id);
             Int2ObjectMap<CompiledShader> shaders = new Int2ObjectArrayMap<>(2);
@@ -664,11 +664,11 @@ public class ShaderProgramImpl implements ShaderProgram {
             switch (value) {
                 case RenderTarget renderTarget -> {
                     target = GL_TEXTURE_2D;
-                    textureId = renderTarget.getColorTextureId();
+                    textureId = VeilRenderSystem.getColorTextureId(renderTarget);
                 }
                 case AbstractTexture texture -> {
                     target = ((AbstractTextureExtension) texture).getTextureTarget();
-                    textureId = texture.getId();
+                    textureId = VeilRenderSystem.getTextureId(texture);
                 }
                 case Integer id -> {
                     target = GL_TEXTURE_2D;
@@ -936,13 +936,13 @@ public class ShaderProgramImpl implements ShaderProgram {
             if (definition != null) {
                 switch (type) {
                     case VERTEX -> {
-                        ResourceLocation vertex = definition.vertex();
+                        Identifier vertex = definition.vertex();
                         if (vertex != null) {
                             return vertex.toString();
                         }
                     }
                     case FRAGMENT -> {
-                        ResourceLocation fragment = definition.fragment();
+                        Identifier fragment = definition.fragment();
                         if (fragment != null) {
                             return fragment.toString();
                         }

@@ -32,7 +32,7 @@ public class SamplerObject implements NativeResource {
      * @return A new sampler
      */
     public static SamplerObject create() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         return new SamplerObject(VeilRenderSystem.directStateAccessSupported() ? glCreateSamplers() : glGenSamplers());
     }
 
@@ -54,7 +54,7 @@ public class SamplerObject implements NativeResource {
      * @param fill The array to fill
      */
     public static void create(SamplerObject[] fill) {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         if (fill.length == 0) {
             return;
         }

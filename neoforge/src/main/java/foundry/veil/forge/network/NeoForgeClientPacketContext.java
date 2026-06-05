@@ -32,7 +32,7 @@ public record NeoForgeClientPacketContext(IPayloadContext context) implements Cl
 
     @Override
     public void sendPacket(Packet<?> packet, @Nullable PacketSendListener callback) {
-        this.context.connection().send(packet, callback);
+        this.context.connection().send(packet, null);
     }
 
     @Override

@@ -4,7 +4,7 @@ import foundry.veil.Veil;
 import foundry.veil.api.client.imgui.VeilImGuiUtil;
 import imgui.ImGui;
 import imgui.flag.ImGuiCol;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import org.apache.commons.io.IOUtils;
 
@@ -46,7 +46,7 @@ public interface VeilResource<T extends VeilResource<?>> {
         VeilResourceInfo resourceInfo = this.resourceInfo();
         ImGui.pushStyleColor(ImGuiCol.Text, resourceInfo.isStatic() ? 0xFFAAAAAA : 0xFFFFFFFF);
         if (dragging || fullName) {
-            VeilImGuiUtil.resourceLocation(resourceInfo.location());
+            VeilImGuiUtil.Identifier(resourceInfo.location());
         } else {
             ImGui.text(resourceInfo.fileName());
         }
@@ -70,7 +70,7 @@ public interface VeilResource<T extends VeilResource<?>> {
                 } catch (IOException e) {
                     throw new CompletionException(e);
                 }
-            }, task -> Minecraft.getInstance().tell(() -> Util.ioPool().execute(task))).thenRunAsync(() -> {
+            }, task -> Minecraft.getInstance().execute(() -> Util.ioPool().execute(task))).thenRunAsync(() -> {
                 try {
                     this.hotReload(resourceManager);
                 } catch (IOException e) {

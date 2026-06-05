@@ -77,7 +77,7 @@ public class EffectInspector implements ResourceFileEditor<FlareResource>, Effec
         ImGui.setNextWindowSizeConstraints(256.0F, 256.0F, Float.MAX_VALUE, Float.MAX_VALUE);
         ImGui.setNextWindowSize(256.0F, 256.0F, ImGuiCond.Once);
         if (ImGui.begin(TITLE.getString() + "###shell_editor_" + resourceInfo.fileName(), this.open, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings)) {
-            VeilImGuiUtil.resourceLocation(resourceInfo.location());
+            VeilImGuiUtil.Identifier(resourceInfo.location());
 
             if (this.selectedValue == null && !this.values.isEmpty()) {
                 this.selectedValue = this.values.object2FloatEntrySet().iterator().next().getKey();
@@ -123,22 +123,19 @@ public class EffectInspector implements ResourceFileEditor<FlareResource>, Effec
 
                 stack.pushMatrix();
                 stack.set(modelView);
-                RenderSystem.applyModelViewMatrix();
                 RenderSystem.backupProjectionMatrix();
-                RenderSystem.setProjectionMatrix(projMat, VertexSorting.ORTHOGRAPHIC_Z);
 
                 this.template.render(this, (MatrixStack) POSE_STACK, 0.0f, null);
 
                 stack.popMatrix();
                 RenderSystem.restoreProjectionMatrix();
-                RenderSystem.applyModelViewMatrix();
             });
 
             if (ImGui.beginChild("3D View", desiredWidth / 2.0F + 2, desiredHeight / 2.0F + 2, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoMove)) {
                 if (ImGui.isWindowHovered()) {
                     this.applyCameraChanges();
                 }
-                ImGui.image(texture, desiredWidth / 2.0F, desiredHeight / 2.0F, 0, 1, 1, 0, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.1F);
+                VeilImGuiUtil.image(texture, desiredWidth / 2.0F, desiredHeight / 2.0F, 0, 1, 1, 0);
             }
             ImGui.endChild();
         }

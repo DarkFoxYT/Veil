@@ -121,7 +121,7 @@ public class DSAAdvancedFboImpl extends AdvancedFboImpl {
             }
         }
 
-        if (Minecraft.ON_OSX) {
+        if ((net.minecraft.util.Util.getPlatform() == net.minecraft.util.Util.OS.OSX)) {
             glGetError();
         }
     }
@@ -158,6 +158,6 @@ public class DSAAdvancedFboImpl extends AdvancedFboImpl {
 
     @Override
     public void resolveToRenderTarget(RenderTarget target, int mask, int filtering) {
-        glBlitNamedFramebuffer(this.id, target.frameBufferId, 0, 0, this.getWidth(), this.getHeight(), 0, 0, target.width, target.height, mask, filtering);
+        glBlitNamedFramebuffer(this.id, VeilRenderSystem.getFramebufferId(target), 0, 0, this.getWidth(), this.getHeight(), 0, 0, target.width, target.height, mask, filtering);
     }
 }

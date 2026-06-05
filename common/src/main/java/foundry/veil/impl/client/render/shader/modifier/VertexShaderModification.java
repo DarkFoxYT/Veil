@@ -7,7 +7,7 @@ import io.github.ocelot.glslprocessor.api.grammar.GlslTypeQualifier;
 import io.github.ocelot.glslprocessor.api.node.GlslTree;
 import io.github.ocelot.glslprocessor.api.visitor.GlslNodeStringWriter;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +21,7 @@ public class VertexShaderModification extends SimpleShaderModification {
     private final Attribute[] attributes;
     private final Map<String, String> mapper;
 
-    public VertexShaderModification(int version, int priority, ResourceLocation[] includes, @Nullable String output, @Nullable String uniform, Function[] functions, Attribute[] attributes) {
+    public VertexShaderModification(int version, int priority, Identifier[] includes, @Nullable String output, @Nullable String uniform, Function[] functions, Attribute[] attributes) {
         super(version, priority, includes, output, uniform, functions);
         this.attributes = attributes;
         this.mapper = new HashMap<>(this.attributes.length);

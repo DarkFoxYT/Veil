@@ -4,7 +4,7 @@ import foundry.veil.Veil;
 import foundry.veil.api.flare.data.model.*;
 import net.minecraft.client.renderer.FaceInfo;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -23,7 +23,7 @@ import java.util.Objects;
  */
 public final class ShellBakery {
 
-    public static final ResourceLocation MISSING_SHELL_LOCATION = Veil.veilPath("builtin/missing");
+    public static final Identifier MISSING_SHELL_LOCATION = Veil.veilPath("builtin/missing");
     public static final BakedShell MISSING_SHELL;
 
     static {
@@ -80,7 +80,7 @@ public final class ShellBakery {
 
     private static void bakeVertex(float[] vertexData, int vertexIndex, Vector3f normal, Direction direction, ShellFaceUV shellFaceUV, float[] posDiv16, @Nullable ShellElementRotation rotation, @Nullable Matrix4f transform) {
         FaceInfo.VertexInfo vertexInfo = FaceInfo.fromFacing(direction).getVertexInfo(vertexIndex);
-        Vector3f pos = new Vector3f(posDiv16[vertexInfo.xFace], posDiv16[vertexInfo.yFace], posDiv16[vertexInfo.zFace]);
+        Vector3f pos = new Vector3f(posDiv16[vertexInfo.xFace().ordinal()], posDiv16[vertexInfo.yFace().ordinal()], posDiv16[vertexInfo.zFace().ordinal()]);
         if (rotation != null && transform != null) {
             Vector3f origin = new Vector3f(rotation.origin()).div(16.0F).sub(0.5f, 0.0f, 0.5f);
 
@@ -93,12 +93,12 @@ public final class ShellBakery {
     private static float[] setupShape(Vector3fc min, Vector3fc max) {
         float[] vertexPosition = new float[Direction.values().length];
         //center the center
-        vertexPosition[FaceInfo.Constants.MIN_X] = min.x() / 16.0F - 0.5f;
-        vertexPosition[FaceInfo.Constants.MIN_Y] = min.y() / 16.0F;
-        vertexPosition[FaceInfo.Constants.MIN_Z] = min.z() / 16.0F - 0.5f;
-        vertexPosition[FaceInfo.Constants.MAX_X] = max.x() / 16.0F - 0.5f;
-        vertexPosition[FaceInfo.Constants.MAX_Y] = max.y() / 16.0F;
-        vertexPosition[FaceInfo.Constants.MAX_Z] = max.z() / 16.0F - 0.5f;
+        vertexPosition[FaceInfo.Extent.MIN_X.ordinal()] = min.x() / 16.0F - 0.5f;
+        vertexPosition[FaceInfo.Extent.MIN_Y.ordinal()] = min.y() / 16.0F;
+        vertexPosition[FaceInfo.Extent.MIN_Z.ordinal()] = min.z() / 16.0F - 0.5f;
+        vertexPosition[FaceInfo.Extent.MAX_X.ordinal()] = max.x() / 16.0F - 0.5f;
+        vertexPosition[FaceInfo.Extent.MAX_Y.ordinal()] = max.y() / 16.0F;
+        vertexPosition[FaceInfo.Extent.MAX_Z.ordinal()] = max.z() / 16.0F - 0.5f;
         return vertexPosition;
     }
 

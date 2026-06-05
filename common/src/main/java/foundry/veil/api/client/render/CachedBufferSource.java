@@ -5,10 +5,11 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.NativeResource;
 
@@ -80,7 +81,7 @@ public class CachedBufferSource implements MultiBufferSource, NativeResource {
         if (meshdata != null) {
             if (renderType.sortOnUpload()) {
                 ByteBufferBuilder bytebufferbuilder = this.buffers.computeIfAbsent(renderType, unused -> new ByteBufferBuilder(renderType.bufferSize()));
-                meshdata.sortQuads(bytebufferbuilder, RenderSystem.getVertexSorting());
+                meshdata.sortQuads(bytebufferbuilder, VertexSorting.DISTANCE_TO_ORIGIN);
             }
 
             renderType.draw(meshdata);

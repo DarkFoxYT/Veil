@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
-import java.util.Deque;
+import java.util.List;
 
 @Mixin(PoseStack.class)
 public abstract class PipelinePoseStackMixin implements MatrixStack {
@@ -20,10 +20,10 @@ public abstract class PipelinePoseStackMixin implements MatrixStack {
     public abstract void shadow$scale(float x, float y, float z);
 
     @Shadow
-    public abstract void shadow$mulPose(Quaternionf quaternion);
+    public abstract void shadow$mulPose(Quaternionfc quaternion);
 
     @Shadow
-    public abstract void shadow$rotateAround(Quaternionf quaternion, float x, float y, float z);
+    public abstract void shadow$rotateAround(Quaternionfc quaternion, float x, float y, float z);
 
     @Shadow
     public abstract void shadow$pushPose();
@@ -33,7 +33,10 @@ public abstract class PipelinePoseStackMixin implements MatrixStack {
 
     @Shadow
     @Final
-    private Deque<PoseStack.Pose> poseStack;
+    private List<PoseStack.Pose> poses;
+
+    @Shadow
+    private int lastIndex;
 
     @Shadow
     public abstract PoseStack.Pose last();
@@ -43,7 +46,7 @@ public abstract class PipelinePoseStackMixin implements MatrixStack {
 
     @Override
     public void clear() {
-        while (this.poseStack.size() > 1) {
+        while (this.lastIndex > 0) {
             this.shadow$popPose();
         }
         this.setIdentity();
@@ -102,7 +105,7 @@ public abstract class PipelinePoseStackMixin implements MatrixStack {
 
     @Override
     public boolean isEmpty() {
-        return this.poseStack.size() == 1;
+        return this.lastIndex == 0;
     }
 
     @Override
@@ -117,7 +120,7 @@ public abstract class PipelinePoseStackMixin implements MatrixStack {
 
     @Override
     public PoseStack.Pose pose() {
-        return this.poseStack.getLast();
+        return this.poses.get(this.lastIndex);
     }
 
     @Override

@@ -22,9 +22,9 @@ import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiMouseButton;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.joml.*;
 
 import java.io.Reader;
@@ -38,7 +38,7 @@ import java.lang.Math;
 public class ShellInspector implements ResourceFileEditor<ShellResource> {
 
     private static final Component TITLE = Component.translatable("inspector.veil.shell.title");
-    public static final ResourceLocation RENDER_TYPE = Veil.veilPath("debug/shell");
+    public static final Identifier RENDER_TYPE = Veil.veilPath("debug/shell");
 
     private final ImBoolean open;
     private final VeilResourceManager resourceManager;
@@ -71,7 +71,7 @@ public class ShellInspector implements ResourceFileEditor<ShellResource> {
         ImGui.setNextWindowSizeConstraints(256.0F, 256.0F, Float.MAX_VALUE, Float.MAX_VALUE);
         ImGui.setNextWindowSize(256.0F, 256.0F, ImGuiCond.Once);
         if (ImGui.begin(TITLE.getString() + "###shell_editor_" + resourceInfo.fileName(), this.open, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings)) {
-            VeilImGuiUtil.resourceLocation(resourceInfo.location());
+            VeilImGuiUtil.Identifier(resourceInfo.location());
             int desiredWidth = ((int) ImGui.getContentRegionAvailX() - 2) * 2;
             int desiredHeight = ((int) ImGui.getContentRegionAvailY() - 2) * 2;
 
@@ -100,23 +100,20 @@ public class ShellInspector implements ResourceFileEditor<ShellResource> {
 
                 stack.pushMatrix();
                 stack.set(modelView);
-                RenderSystem.applyModelViewMatrix();
                 RenderSystem.backupProjectionMatrix();
-                RenderSystem.setProjectionMatrix(projMat, VertexSorting.ORTHOGRAPHIC_Z);
 
                 shell.getVertexArray().bind();
                 shell.getVertexArray().drawWithRenderType(renderType);
 
                 stack.popMatrix();
                 RenderSystem.restoreProjectionMatrix();
-                RenderSystem.applyModelViewMatrix();
             });
 
             if (ImGui.beginChild("3D View", desiredWidth / 2.0F + 2, desiredHeight / 2.0F + 2, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoMove)) {
                 if (ImGui.isWindowHovered()) {
                     this.applyCameraChanges();
                 }
-                ImGui.image(texture, desiredWidth / 2.0F, desiredHeight / 2.0F, 0, 1, 1, 0, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.1F);
+                VeilImGuiUtil.image(texture, desiredWidth / 2.0F, desiredHeight / 2.0F, 0, 1, 1, 0);
             }
             ImGui.endChild();
         }

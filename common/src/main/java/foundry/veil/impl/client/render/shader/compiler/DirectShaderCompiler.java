@@ -1,6 +1,6 @@
 package foundry.veil.impl.client.render.shader.compiler;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import foundry.veil.Veil;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.ext.VeilDebug;
@@ -10,7 +10,7 @@ import foundry.veil.api.client.render.shader.compiler.ShaderCompiler;
 import foundry.veil.api.client.render.shader.compiler.ShaderException;
 import foundry.veil.api.client.render.shader.compiler.VeilShaderSource;
 import it.unimi.dsi.fastutil.objects.Object2IntMaps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,7 +50,7 @@ public class DirectShaderCompiler implements ShaderCompiler {
     }
 
     @Override
-    public CompiledShader compile(int type, ResourceLocation path) throws IOException, ShaderException {
+    public CompiledShader compile(int type, Identifier path) throws IOException, ShaderException {
         if (this.provider == null) {
             throw new IOException("Failed to read " + ShaderManager.getTypeName(type) + " from " + path + " because no provider was specified");
         }
@@ -62,12 +62,12 @@ public class DirectShaderCompiler implements ShaderCompiler {
         this.validateType(type);
 
         String sourceCode = source.sourceCode();
-        ResourceLocation sourceId = source.sourceId();
+        Identifier sourceId = source.sourceId();
         int shader = glCreateShader(type);
         if (sourceId != null) {
             VeilDebug.get().objectLabel(GL_SHADER, shader, ShaderManager.getTypeName(type) + " Shader " + sourceId);
         }
-        GlStateManager.glShaderSource(shader, List.of(sourceCode));
+        GlStateManager.glShaderSource(shader, sourceCode);
 
         glCompileShader(shader);
         if (glGetShaderi(shader, GL_COMPILE_STATUS) != GL_TRUE) {

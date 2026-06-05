@@ -28,7 +28,7 @@ import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import imgui.type.ImString;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -108,7 +108,7 @@ public class FramebufferFileEditor implements ResourceFileEditor<FramebufferReso
             ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0, 0);
             if (ImGui.beginChild("##size", boxWidth, boxHeight, true)) {
                 FramebufferManager framebufferManager = VeilRenderSystem.renderer().getFramebufferManager();
-                ResourceLocation id = FramebufferManager.FRAMEBUFFER_LISTER.fileToId(this.resource.resourceInfo().location());
+                Identifier id = FramebufferManager.FRAMEBUFFER_LISTER.fileToId(this.resource.resourceInfo().location());
                 AdvancedFbo fbo = framebufferManager.getFramebuffer(id);
 
                 if (fbo != null) {
@@ -123,7 +123,7 @@ public class FramebufferFileEditor implements ResourceFileEditor<FramebufferReso
                         }
                     }
                     if (textureId > 0) {
-                        ImGui.image(textureId, boxWidth, boxHeight, 0, 1, 1, 0);
+                        VeilImGuiUtil.image(textureId, boxWidth, boxHeight, 0, 1, 1, 0);
                     }
                 }
             }
@@ -303,31 +303,12 @@ public class FramebufferFileEditor implements ResourceFileEditor<FramebufferReso
 
         ImDrawList drawList = ImGui.getWindowDrawList();
         int length = next.length();
-        drawList.primReserve(6 * length, 4 * length);
         for (int i = 0; i < length; i++) {
             int codePoint = next.codePointAt(i);
-            ImFontGlyph glyph = font.findGlyph(codePoint);
-
-            posY -= font.getCharAdvance(codePoint);
-            drawList.primQuadUV(
-                    (int) (posX + glyph.getY1()),
-                    (int) (posY + glyph.getX0()),
-                    (int) (posX + glyph.getY1()),
-                    (int) (posY + glyph.getX1()),
-                    (int) (posX + glyph.getY0()),
-                    (int) (posY + glyph.getX1()),
-                    (int) (posX + glyph.getY0()),
-                    (int) (posY + glyph.getX0()),
-
-                    glyph.getU1(),
-                    glyph.getV1(),
-                    glyph.getU0(),
-                    glyph.getV1(),
-                    glyph.getU0(),
-                    glyph.getV0(),
-                    glyph.getU1(),
-                    glyph.getV0(),
-                    -1);
+            String character = new String(Character.toChars(codePoint));
+            posY -= font.calcTextSizeAX(ImGui.getFontSize(), Float.MAX_VALUE, 0, character);
+            drawList.addText(posX, posY, -1, character);
+            i += Character.charCount(codePoint) - 1;
         }
     }
 

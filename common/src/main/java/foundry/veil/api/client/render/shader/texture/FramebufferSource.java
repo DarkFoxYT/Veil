@@ -5,7 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.texture.TextureFilter;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -22,7 +22,7 @@ import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
  * @author Ocelot
  */
 public record FramebufferSource(
-        ResourceLocation name,
+        Identifier name,
         int sampler,
         boolean depth,
         @Nullable TextureFilter filter
@@ -35,7 +35,7 @@ public record FramebufferSource(
     ).apply(instance, (name, sampler, filter) -> {
         boolean depth = name.endsWith(":depth");
         String path = depth ? name.substring(0, name.length() - 6) : name;
-        ResourceLocation location = name.contains(":") ? ResourceLocation.parse(path) : ResourceLocation.fromNamespaceAndPath("temp", name);
+        Identifier location = name.contains(":") ? Identifier.parse(path) : Identifier.fromNamespaceAndPath("temp", name);
         return new FramebufferSource(location, depth ? 0 : sampler, depth, filter.orElse(null));
     }));
 

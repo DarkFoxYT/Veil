@@ -6,9 +6,9 @@ import foundry.veil.api.client.render.VeilRenderBridge;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.framebuffer.VeilFramebuffers;
 import foundry.veil.api.client.render.rendertype.VeilRenderTypeBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public record OutputLayer(LayerTemplateValue<ResourceLocation> framebufferId) implements RenderTypeLayer {
+public record OutputLayer(LayerTemplateValue<Identifier> framebufferId) implements RenderTypeLayer {
 
     public static final MapCodec<OutputLayer> CODEC = LayerTemplateValue.LOCATION_CODEC
             .fieldOf("framebuffer")
@@ -16,7 +16,7 @@ public record OutputLayer(LayerTemplateValue<ResourceLocation> framebufferId) im
 
     @Override
     public void addShard(VeilRenderTypeBuilder builder, Object... params) {
-        ResourceLocation id = this.framebufferId.parse(params);
+        Identifier id = this.framebufferId.parse(params);
         if (VeilFramebuffers.BLOOM.equals(id)) {
             builder.outputState(VeilRenderSystem.BLOOM_SHARD);
         } else {

@@ -6,7 +6,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -56,7 +56,8 @@ public class FlareManager {
         }
 
         @Override
-        public @NotNull CompletableFuture<Void> reload(PreparationBarrier preparationBarrier, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller preparationsProfiler, @NotNull ProfilerFiller reloadProfiler, @NotNull Executor backgroundExecutor, @NotNull Executor gameExecutor) {
+        public @NotNull CompletableFuture<Void> reload(@NotNull SharedState sharedState, @NotNull Executor backgroundExecutor, @NotNull PreparationBarrier preparationBarrier, @NotNull Executor gameExecutor) {
+            ResourceManager resourceManager = sharedState.resourceManager();
             return VeilDynamicRegistry.loadRegistries(resourceManager, REGISTRIES, backgroundExecutor)
                     .thenCompose(preparationBarrier::wait)
                     .thenAcceptAsync(data -> {
@@ -66,8 +67,8 @@ public class FlareManager {
                         if (msg != null) {
                             LOGGER.error("Flare registry loading errors:{}", msg);
                         }
-                        LOGGER.info("Loaded {} templates", registryAccess.registryOrThrow(EFFECT_TEMPLATES).size());
-                        LOGGER.info("Loaded {} modules", registryAccess.registryOrThrow(EFFECT_MODULES).size());
+                        LOGGER.info("Loaded {} templates", registryAccess.lookupOrThrow(EFFECT_TEMPLATES).size());
+                        LOGGER.info("Loaded {} modules", registryAccess.lookupOrThrow(EFFECT_MODULES).size());
                     }, gameExecutor);
         }
 

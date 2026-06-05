@@ -6,7 +6,7 @@ import foundry.veil.api.client.render.VeilLevelPerspectiveRenderer;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.framebuffer.FramebufferStack;
 import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Supplier;
@@ -18,7 +18,7 @@ public class DynamicBufferShard extends RenderStateShard {
         this(Veil.veilPath("dynamic_" + name), targetSupplier);
     }
 
-    public DynamicBufferShard(ResourceLocation name, Supplier<RenderTarget> targetSupplier) {
+    public DynamicBufferShard(Identifier name, Supplier<RenderTarget> targetSupplier) {
         super(Veil.MODID + ":dynamic_buffer", () -> {
             if (!Veil.platform().hasErrors()) {
                 if (!VeilLevelPerspectiveRenderer.isRenderingPerspective()) {

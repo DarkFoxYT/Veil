@@ -1,10 +1,9 @@
 package foundry.veil.impl.resource;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.platform.TextureUtil;
 import foundry.veil.api.resource.VeilResource;
 import foundry.veil.impl.resource.tree.VeilResourceFolder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +23,7 @@ public class VeilPackResources implements NativeResource {
         this.root = new VeilResourceFolder(name);
     }
 
-    public void add(@Nullable PackType packType, ResourceLocation loc, VeilResource<?> resource) {
+    public void add(@Nullable PackType packType, Identifier loc, VeilResource<?> resource) {
         if (packType != null) {
             this.root.addResource(packType.getDirectory() + "/" + loc.getNamespace() + "/" + loc.getPath(), resource);
         } else {
@@ -60,14 +59,6 @@ public class VeilPackResources implements NativeResource {
     }
 
     public void loadIcon(NativeImage image, boolean blur) {
-        if (this.texture == 0) {
-            this.texture = glGenTextures();
-        }
-
-        TextureUtil.prepareImage(this.texture, image.getWidth(), image.getHeight());
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, blur ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, blur ? GL_LINEAR : GL_NEAREST);
-        image.upload(0, 0, 0, false);
     }
 
     public String getName() {

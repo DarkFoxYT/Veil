@@ -1,7 +1,5 @@
 package foundry.veil.forge.platform;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import foundry.veil.api.client.render.MatrixStack;
 import foundry.veil.api.client.render.VeilRenderBridge;
 import foundry.veil.api.event.*;
@@ -28,19 +26,19 @@ import java.util.Map;
 @ApiStatus.Internal
 public class NeoForgeVeilEventPlatform implements VeilEventPlatform {
 
-    private static final BiMap<VeilRenderLevelStageEvent.Stage, RenderLevelStageEvent.Stage> STAGE_MAPPING = HashBiMap.create(Map.ofEntries(
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_SKY, RenderLevelStageEvent.Stage.AFTER_SKY),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS, RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_CUTOUT_MIPPED_BLOCKS, RenderLevelStageEvent.Stage.AFTER_CUTOUT_MIPPED_BLOCKS_BLOCKS),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS, RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_ENTITIES, RenderLevelStageEvent.Stage.AFTER_ENTITIES),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES, RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS, RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS, RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_PARTICLES, RenderLevelStageEvent.Stage.AFTER_PARTICLES),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_WEATHER, RenderLevelStageEvent.Stage.AFTER_WEATHER),
-            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_LEVEL, RenderLevelStageEvent.Stage.AFTER_LEVEL)
-    ));
+    private static final Map<VeilRenderLevelStageEvent.Stage, Class<? extends RenderLevelStageEvent>> STAGE_MAPPING = Map.ofEntries(
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_SKY, RenderLevelStageEvent.AfterSky.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS, RenderLevelStageEvent.AfterOpaqueBlocks.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_CUTOUT_MIPPED_BLOCKS, RenderLevelStageEvent.AfterOpaqueBlocks.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS, RenderLevelStageEvent.AfterOpaqueBlocks.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_ENTITIES, RenderLevelStageEvent.AfterEntities.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES, RenderLevelStageEvent.AfterEntities.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS, RenderLevelStageEvent.AfterTranslucentBlocks.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS, RenderLevelStageEvent.AfterTripwireBlocks.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_PARTICLES, RenderLevelStageEvent.AfterParticles.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_WEATHER, RenderLevelStageEvent.AfterWeather.class),
+            Map.entry(VeilRenderLevelStageEvent.Stage.AFTER_LEVEL, RenderLevelStageEvent.AfterLevel.class)
+    );
 
     private IEventBus getModBus() {
         ModContainer container = ModLoadingContext.get().getActiveContainer();
@@ -84,7 +82,7 @@ public class NeoForgeVeilEventPlatform implements VeilEventPlatform {
                 return;
             }
 
-            RenderLevelStageEvent.Stage forgeStage = getForgeStage(stage);
+            Class<? extends RenderLevelStageEvent> forgeStage = getForgeStage(stage);
             if (forgeStage != null) {
                 forgeEvent.register(forgeStage, renderType);
             }
@@ -109,20 +107,21 @@ public class NeoForgeVeilEventPlatform implements VeilEventPlatform {
     @Override
     public void onVeilRenderLevelStage(VeilRenderLevelStageEvent event) {
         NeoForge.EVENT_BUS.<RenderLevelStageEvent>addListener(forgeEvent -> {
-            VeilRenderLevelStageEvent.Stage stage = getVeilStage(forgeEvent.getStage());
+            VeilRenderLevelStageEvent.Stage stage = getVeilStage(forgeEvent);
             if (stage == null) {
                 return;
             }
 
+            Minecraft minecraft = Minecraft.getInstance();
             LevelRenderer levelRenderer = forgeEvent.getLevelRenderer();
-            MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+            MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
             MatrixStack poseStack = VeilRenderBridge.create(forgeEvent.getPoseStack());
             Matrix4f modelViewMatrix = forgeEvent.getModelViewMatrix();
-            Matrix4f projectionMatrix = forgeEvent.getProjectionMatrix();
-            int renderTick = forgeEvent.getRenderTick();
-            DeltaTracker deltaTracker = forgeEvent.getPartialTick();
-            Camera camera = forgeEvent.getCamera();
-            Frustum frustum = forgeEvent.getFrustum();
+            Matrix4f projectionMatrix = minecraft.gameRenderer.getProjectionMatrix(minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+            int renderTick = 0;
+            DeltaTracker deltaTracker = minecraft.getDeltaTracker();
+            Camera camera = minecraft.gameRenderer.getMainCamera();
+            Frustum frustum = null;
             event.onRenderLevelStage(stage, levelRenderer, bufferSource, poseStack, modelViewMatrix, projectionMatrix, renderTick, deltaTracker, camera, frustum);
         });
     }
@@ -137,11 +136,19 @@ public class NeoForgeVeilEventPlatform implements VeilEventPlatform {
         this.getModBus().<ForgeVeilDynamicBuffersChangedEvent>addListener(forgeEvent -> event.onVeilDynamicBuffersChanged(forgeEvent.getChange()));
     }
 
-    public static @Nullable RenderLevelStageEvent.Stage getForgeStage(VeilRenderLevelStageEvent.Stage stage) {
+    public static @Nullable Class<? extends RenderLevelStageEvent> getForgeStage(VeilRenderLevelStageEvent.Stage stage) {
         return STAGE_MAPPING.get(stage);
     }
 
-    public static @Nullable VeilRenderLevelStageEvent.Stage getVeilStage(RenderLevelStageEvent.Stage stage) {
-        return STAGE_MAPPING.inverse().get(stage);
+    public static @Nullable VeilRenderLevelStageEvent.Stage getVeilStage(RenderLevelStageEvent event) {
+        if (event instanceof RenderLevelStageEvent.AfterSky) return VeilRenderLevelStageEvent.Stage.AFTER_SKY;
+        if (event instanceof RenderLevelStageEvent.AfterOpaqueBlocks) return VeilRenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS;
+        if (event instanceof RenderLevelStageEvent.AfterEntities) return VeilRenderLevelStageEvent.Stage.AFTER_ENTITIES;
+        if (event instanceof RenderLevelStageEvent.AfterTranslucentBlocks) return VeilRenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS;
+        if (event instanceof RenderLevelStageEvent.AfterTripwireBlocks) return VeilRenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS;
+        if (event instanceof RenderLevelStageEvent.AfterParticles) return VeilRenderLevelStageEvent.Stage.AFTER_PARTICLES;
+        if (event instanceof RenderLevelStageEvent.AfterWeather) return VeilRenderLevelStageEvent.Stage.AFTER_WEATHER;
+        if (event instanceof RenderLevelStageEvent.AfterLevel) return VeilRenderLevelStageEvent.Stage.AFTER_LEVEL;
+        return null;
     }
 }

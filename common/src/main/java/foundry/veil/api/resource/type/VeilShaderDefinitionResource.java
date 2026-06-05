@@ -22,7 +22,7 @@ public record VeilShaderDefinitionResource(VeilResourceInfo resourceInfo,
 //            float size = ImGui.getTextLineHeight();
 //            if (dragging) {
 //                VeilShaderDefinitionResourceRenderer.render(shader, size * 8, size * 8);
-//                VeilImGuiUtil.resourceLocation(this.resourceInfo().location());
+//                VeilImGuiUtil.Identifier(this.resourceInfo().location());
 //                return;
 //            }
 //

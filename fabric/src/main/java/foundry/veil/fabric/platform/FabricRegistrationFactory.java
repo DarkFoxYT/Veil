@@ -7,7 +7,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Collection;
@@ -22,7 +22,7 @@ public class FabricRegistrationFactory implements RegistrationProvider.Factory {
     @SuppressWarnings("unchecked")
     @Override
     public <T> RegistrationProvider<T> create(ResourceKey<? extends Registry<T>> key, String modId) {
-        Registry<?> reg = BuiltInRegistries.REGISTRY.get(key.location());
+        Registry<?> reg = BuiltInRegistries.REGISTRY.getValue(key.identifier());
         if (reg == null) {
             reg = FabricRegistryBuilder.createSimple((ResourceKey<Registry<T>>) key).buildAndRegister();
         }
@@ -49,7 +49,7 @@ public class FabricRegistrationFactory implements RegistrationProvider.Factory {
 
         @Override
         @SuppressWarnings("unchecked")
-        public <I extends T> RegistryObject<I> register(ResourceLocation id, Supplier<? extends I> supplier) {
+        public <I extends T> RegistryObject<I> register(Identifier id, Supplier<? extends I> supplier) {
             I value = Registry.register(this.registry, id, supplier.get());
             ResourceKey<I> key = ResourceKey.create((ResourceKey<? extends Registry<I>>) this.registry.key(), id);
             RegistryObject<I> object = new FabricRegistryObject<>(this.registry, key, value);
@@ -95,7 +95,7 @@ public class FabricRegistrationFactory implements RegistrationProvider.Factory {
         @SuppressWarnings("unchecked")
         @Override
         public Holder<I> asHolder() {
-            return (Holder<I>) this.registry.getHolderOrThrow((ResourceKey<T>) this.key);
+            return (Holder<I>) this.registry.wrapAsHolder((T) this.value);
         }
     }
 }

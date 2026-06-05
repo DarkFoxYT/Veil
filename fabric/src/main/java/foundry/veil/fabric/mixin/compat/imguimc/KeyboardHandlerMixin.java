@@ -4,6 +4,7 @@ import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.impl.client.imgui.VeilImGuiCompat;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.KeyEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,8 +22,8 @@ public class KeyboardHandlerMixin {
     private Minecraft minecraft;
 
     @Inject(method = "keyPress", at = @At("TAIL"))
-    public void keyPress(long window, int key, int scancode, int action, int mods, CallbackInfo ci) {
-        if (window == this.minecraft.getWindow().getWindow() && action == GLFW_PRESS && VeilImGuiCompat.EDITOR_KEY.matches(key, scancode)) {
+    public void keyPress(long window, int action, KeyEvent event, CallbackInfo ci) {
+        if (window == this.minecraft.getWindow().handle() && action == GLFW_PRESS && VeilImGuiCompat.EDITOR_KEY.matches(event)) {
             VeilRenderSystem.renderer().getEditorManager().toggle();
         }
     }

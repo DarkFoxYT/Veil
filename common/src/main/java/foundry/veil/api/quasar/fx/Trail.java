@@ -8,7 +8,7 @@ import foundry.veil.api.quasar.emitters.module.render.TrailSettings;
 import foundry.veil.impl.quasar.MathUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -42,7 +42,7 @@ public class Trail {
     private TilingMode tilingMode = TilingMode.STRETCH;
     private int frequency = 1;
     private float minDistance = 0f;
-    private ResourceLocation texture = null;
+    private Identifier texture = null;
     private boolean parentRotation = false;
     private int timeout = 0;
 
@@ -74,7 +74,7 @@ public class Trail {
         this.tilingMode = tilingMode;
     }
 
-    public void setTexture(ResourceLocation texture) {
+    public void setTexture(Identifier texture) {
         this.texture = texture;
     }
 
@@ -111,7 +111,7 @@ public class Trail {
         this.widthFunction = widthFunction;
     }
 
-    public ResourceLocation getTexture() {
+    public Identifier getTexture() {
         return this.texture;
     }
 
@@ -219,7 +219,7 @@ public class Trail {
             Vector3f topOffset = new Vector3f(0, (width / 2f), 0);
             Vector3f bottomOffset = new Vector3f(0, -(width / 2f), 0);
             if (this.billboard) {
-                Vec3 a = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().subtract(this.points[i]).normalize();
+                Vec3 a = Minecraft.getInstance().gameRenderer.getMainCamera().position().subtract(this.points[i]).normalize();
                 Vector3f cameraDirection = new Vector3f((float) a.x, (float) a.y, (float) a.z);
                 Vec3 b = this.points[Math.min(i + this.frequency, this.points.length - 1)].subtract(this.points[i]).normalize();
                 Vector3f dirToNextPoint = new Vector3f((float) b.x(), (float) b.y(), (float) b.z());

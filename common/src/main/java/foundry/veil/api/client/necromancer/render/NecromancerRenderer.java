@@ -2,7 +2,7 @@ package foundry.veil.api.client.necromancer.render;
 
 import foundry.veil.api.client.necromancer.Skeleton;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix4fc;
 
 public interface NecromancerRenderer extends MultiBufferSource {

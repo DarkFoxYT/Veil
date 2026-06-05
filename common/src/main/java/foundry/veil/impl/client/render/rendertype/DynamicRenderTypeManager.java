@@ -10,9 +10,9 @@ import com.mojang.serialization.JsonOps;
 import foundry.veil.Veil;
 import foundry.veil.api.client.render.rendertype.layer.CompositeRenderTypeData;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.FileToIdConverter;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
@@ -36,14 +36,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @ApiStatus.Internal
-public class DynamicRenderTypeManager extends SimplePreparableReloadListener<Map<ResourceLocation, byte[]>> {
+public class DynamicRenderTypeManager extends SimplePreparableReloadListener<Map<Identifier, byte[]>> {
 
     private static final FileToIdConverter CONVERTER = FileToIdConverter.json("pinwheel/rendertypes");
 
-    private final Map<ResourceLocation, RenderTypeCache> renderTypes = new Object2ObjectArrayMap<>();
+    private final Map<Identifier, RenderTypeCache> renderTypes = new Object2ObjectArrayMap<>();
 
     @Contract(pure = true)
-    public @Nullable RenderType get(ResourceLocation id, Object... params) {
+    public @Nullable RenderType get(Identifier id, Object... params) {
         RenderTypeCache cache = this.renderTypes.get(id);
         if (cache == null) {
             return null;
@@ -53,13 +53,13 @@ public class DynamicRenderTypeManager extends SimplePreparableReloadListener<Map
     }
 
     @Override
-    protected @NotNull Map<ResourceLocation, byte[]> prepare(@NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profilerFiller) {
-        Map<ResourceLocation, byte[]> data = new HashMap<>();
+    protected @NotNull Map<Identifier, byte[]> prepare(@NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profilerFiller) {
+        Map<Identifier, byte[]> data = new HashMap<>();
 
-        Map<ResourceLocation, Resource> resources = CONVERTER.listMatchingResources(resourceManager);
-        for (Map.Entry<ResourceLocation, Resource> entry : resources.entrySet()) {
-            ResourceLocation location = entry.getKey();
-            ResourceLocation id = CONVERTER.fileToId(location);
+        Map<Identifier, Resource> resources = CONVERTER.listMatchingResources(resourceManager);
+        for (Map.Entry<Identifier, Resource> entry : resources.entrySet()) {
+            Identifier location = entry.getKey();
+            Identifier id = CONVERTER.fileToId(location);
 
             try (InputStream stream = entry.getValue().open()) {
                 data.put(id, stream.readAllBytes());
@@ -72,11 +72,11 @@ public class DynamicRenderTypeManager extends SimplePreparableReloadListener<Map
     }
 
     @Override
-    protected void apply(Map<ResourceLocation, byte[]> fileData, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
-        Map<ResourceLocation, RenderTypeCache> renderTypes = new HashMap<>();
+    protected void apply(Map<Identifier, byte[]> fileData, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+        Map<Identifier, RenderTypeCache> renderTypes = new HashMap<>();
 
-        for (Map.Entry<ResourceLocation, byte[]> entry : fileData.entrySet()) {
-            ResourceLocation id = entry.getKey();
+        for (Map.Entry<Identifier, byte[]> entry : fileData.entrySet()) {
+            Identifier id = entry.getKey();
 
             try (Reader reader = new InputStreamReader(new ByteArrayInputStream(entry.getValue()))) {
                 JsonElement element = JsonParser.parseReader(reader);

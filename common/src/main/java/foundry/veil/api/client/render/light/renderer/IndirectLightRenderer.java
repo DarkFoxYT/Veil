@@ -15,7 +15,7 @@
 //import foundry.veil.api.client.render.vertex.VertexArray;
 //import foundry.veil.api.client.render.vertex.VertexArrayBuilder;
 //import net.minecraft.client.Minecraft;
-//import net.minecraft.resources.ResourceLocation;
+//import net.minecraft.resources.Identifier;
 //import net.minecraft.util.profiling.ProfilerFiller;
 //import org.joml.Vector3dc;
 //import org.joml.Vector4fc;
@@ -40,7 +40,7 @@
 // */
 //public abstract class IndirectLightRenderer<T extends LightData & IndirectLightData> implements LightTypeRenderer<T> {
 //
-//    private static final ResourceLocation CULL_SHADER = Veil.veilPath("light/indirect_sphere");
+//    private static final Identifier CULL_SHADER = Veil.veilPath("light/indirect_sphere");
 //    private static final int MIN_LIGHTS = 20;
 //
 //    protected final int lightSize;
@@ -86,9 +86,9 @@
 //            if (VeilRenderSystem.directStateAccessSupported()) {
 //                glNamedBufferData(this.sizeVbo, Integer.BYTES, GL_DYNAMIC_DRAW);
 //            } else {
-//                RenderSystem.glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, this.sizeVbo);
+//                GlStateManager._glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, this.sizeVbo);
 //                glBufferData(GL_ATOMIC_COUNTER_BUFFER, Integer.BYTES, GL_DYNAMIC_DRAW);
-//                RenderSystem.glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+//                GlStateManager._glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 //            }
 //        } else {
 //            Veil.LOGGER.info("Using CPU Frustum Culling for {} renderer", this.getClass().getSimpleName());
@@ -146,8 +146,8 @@
 //            glNamedBufferData(this.instancedVbo, (long) this.maxLights * this.lightSize, GL_DYNAMIC_DRAW);
 //            glNamedBufferData(this.indirectVbo, (long) this.maxLights * Integer.BYTES * 5, GL_DYNAMIC_DRAW);
 //        } else {
-//            RenderSystem.glBindBuffer(GL_ARRAY_BUFFER, this.instancedVbo);
-//            RenderSystem.glBindBuffer(GL_DRAW_INDIRECT_BUFFER, this.indirectVbo);
+//            GlStateManager._glBindBuffer(GL_ARRAY_BUFFER, this.instancedVbo);
+//            GlStateManager._glBindBuffer(GL_DRAW_INDIRECT_BUFFER, this.indirectVbo);
 //            glBufferData(GL_ARRAY_BUFFER, (long) this.maxLights * this.lightSize, GL_DYNAMIC_DRAW);
 //            glBufferData(GL_DRAW_INDIRECT_BUFFER, (long) this.maxLights * Integer.BYTES * 5, GL_DYNAMIC_DRAW);
 //        }
@@ -239,7 +239,7 @@
 //        }
 //
 //        int count = 0;
-//        RenderSystem.glBindBuffer(GL_DRAW_INDIRECT_BUFFER, this.indirectVbo);
+//        GlStateManager._glBindBuffer(GL_DRAW_INDIRECT_BUFFER, this.indirectVbo);
 //        try (MemoryStack stack = MemoryStack.stackPush()) {
 //            ByteBuffer buffer = stack.malloc(this.lowResSize > 0 ? Integer.BYTES * 5 : Integer.BYTES);
 //
@@ -269,7 +269,7 @@
 //    @Override
 //    public void prepareLights(LightRenderer lightRenderer, Set<T> lights, Set<T> removedLights, CullFrustum frustum) {
 //        ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
-//        RenderSystem.glBindBuffer(GL_ARRAY_BUFFER, this.instancedVbo);
+//        GlStateManager._glBindBuffer(GL_ARRAY_BUFFER, this.instancedVbo);
 //
 //        profiler.push("resize");
 //
@@ -283,7 +283,7 @@
 //        profiler.popPush("update");
 //
 //        // The instanced buffer needs to be updated
-//        RenderSystem.glBindBuffer(GL_ARRAY_BUFFER, this.instancedVbo);
+//        GlStateManager._glBindBuffer(GL_ARRAY_BUFFER, this.instancedVbo);
 //        if (rebuild || !removedLights.isEmpty()) {
 //            this.updateAllLights(lights);
 //        } else {
@@ -319,9 +319,9 @@
 //        }
 //
 //        this.vertexArray.bind();
-//        RenderSystem.glBindBuffer(GL_DRAW_INDIRECT_BUFFER, this.indirectVbo);
+//        GlStateManager._glBindBuffer(GL_DRAW_INDIRECT_BUFFER, this.indirectVbo);
 //        this.vertexArray.drawIndirect(0L, this.visibleLights, 0);
-//        RenderSystem.glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+//        GlStateManager._glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 //        VertexBuffer.unbind();
 //
 //        ShaderProgram.unbind();

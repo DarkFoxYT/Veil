@@ -1,0 +1,13 @@
+{
+  "max_lifetime": 90,
+  "loop": true,
+  "rate": 3,
+  "count": 4,
+  "max_particles": 160,
+  "emitter_settings": {
+    "shape": "veil:examples/light_trails",
+    "particle_settings": "veil:examples/light_trails",
+    "force_spawn": false
+  },
+  "particle_data": "veil:examples/light_trails"
+}

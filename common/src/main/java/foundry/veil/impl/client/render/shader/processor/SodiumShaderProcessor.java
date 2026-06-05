@@ -12,7 +12,7 @@ import io.github.ocelot.glslprocessor.api.GlslParser;
 import io.github.ocelot.glslprocessor.api.GlslSyntaxException;
 import io.github.ocelot.glslprocessor.api.node.GlslTree;
 import io.github.ocelot.glslprocessor.lib.anarres.cpp.LexerException;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -32,10 +32,10 @@ public class SodiumShaderProcessor {
     private static final ThreadLocal<ShaderProcessorList> PROCESSOR = new ThreadLocal<>();
     private static final ThreadLocal<Map<String, Object>> CUSTOM_PROGRAM_DATA = new ThreadLocal<>();
     private static final ThreadLocal<Integer> SHADER_TYPE = new ThreadLocal<>();
-    private static final ThreadLocal<ResourceLocation> SHADER_NAME = new ThreadLocal<>();
+    private static final ThreadLocal<Identifier> SHADER_NAME = new ThreadLocal<>();
     private static final ThreadLocal<GLCapabilities> GL_CAPABILITIES = new ThreadLocal<>();
 
-    public static void setShaderType(int type, ResourceLocation shaderName, GLCapabilities glCapabilities) {
+    public static void setShaderType(int type, Identifier shaderName, GLCapabilities glCapabilities) {
         SHADER_TYPE.set(type);
         SHADER_NAME.set(shaderName);
         GL_CAPABILITIES.set(glCapabilities);
@@ -60,7 +60,7 @@ public class SodiumShaderProcessor {
     }
 
     public static String modify(int activeBuffers, String source) throws IOException, GlslSyntaxException, LexerException {
-        ResourceLocation shaderName = SHADER_NAME.get();
+        Identifier shaderName = SHADER_NAME.get();
         if (shaderName == null) {
             return source;
         }
@@ -81,13 +81,13 @@ public class SodiumShaderProcessor {
         return tree.toSourceString();
     }
 
-    public static @Nullable ResourceLocation getActiveShaderName() {
+    public static @Nullable Identifier getActiveShaderName() {
         return SHADER_NAME.get();
     }
 
     private record Context(Map<String, Object> customProgramData,
                            ShaderProcessorList processor,
-                           @Nullable ResourceLocation name,
+                           @Nullable Identifier name,
                            int activeBuffers,
                            int type,
                            GLCapabilities glCapabilities,
@@ -95,7 +95,7 @@ public class SodiumShaderProcessor {
                            boolean sourceFile) implements ShaderPreProcessor.SodiumContext {
 
         @Override
-        public GlslTree modifyInclude(@Nullable ResourceLocation name, String source) throws IOException, GlslSyntaxException, LexerException {
+        public GlslTree modifyInclude(@Nullable Identifier name, String source) throws IOException, GlslSyntaxException, LexerException {
             GlslTree tree = GlslParser.preprocessParse(source, this.macros);
             this.processor.getImportProcessor().modify(new Context(this.customProgramData, this.processor, name, this.activeBuffers, this.type, this.glCapabilities, this.macros, false), tree);
             return tree;

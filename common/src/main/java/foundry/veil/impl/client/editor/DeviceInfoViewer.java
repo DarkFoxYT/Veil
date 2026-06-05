@@ -192,7 +192,7 @@ public class DeviceInfoViewer extends SingleWindowInspector {
         ImGui.separator();
 
         title(GL_TEXTURE);
-        text("inspector.veil.device_info.opengl.texture.max_texture_size", null, RenderSystem.maxSupportedTextureSize());
+        text("inspector.veil.device_info.opengl.texture.max_texture_size", null, RenderSystem.getDevice().getMaxTextureSize());
         text("inspector.veil.device_info.opengl.texture.max_array_texture_layers", null, VeilRenderSystem.maxArrayTextureLayers());
         text("inspector.veil.device_info.opengl.texture.max_texture_anisotropy", "The maximum value GL_TEXTURE_MAX_ANISOTROPY can be set to", VeilRenderSystem.textureAnisotropySupported() ? VeilRenderSystem.maxTextureAnisotropy() : null);
 

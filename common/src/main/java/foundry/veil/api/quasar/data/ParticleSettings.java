@@ -5,7 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import foundry.veil.api.util.CodecUtil;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.RegistryFileCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -58,7 +58,7 @@ public record ParticleSettings(float particleSpeed,
         return this.initialDirection(random).mul(this.particleSpeed(), new Vector3f());
     }
 
-    public @Nullable ResourceLocation getRegistryId() {
-        return QuasarParticles.registryAccess().registry(QuasarParticles.PARTICLE_SETTINGS).map(registry -> registry.getKey(this)).orElse(null);
+    public @Nullable Identifier getRegistryId() {
+        return QuasarParticles.registryAccess().lookup(QuasarParticles.PARTICLE_SETTINGS).map(registry -> registry.getKey(this)).orElse(null);
     }
 }

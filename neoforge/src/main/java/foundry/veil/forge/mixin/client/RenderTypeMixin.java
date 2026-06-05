@@ -1,7 +1,7 @@
 package foundry.veil.forge.mixin.client;
 
 import foundry.veil.forge.impl.ForgeRenderTypeStageHandler;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.RegistryFileCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -39,7 +39,7 @@ public record ParticleEmitterData(int maxLifetime,
         return this.particleDataHolder.value();
     }
 
-    public @Nullable ResourceLocation getRegistryId() {
+    public @Nullable Identifier getRegistryId() {
         return this.particleData().getRegistryId();
     }
 }

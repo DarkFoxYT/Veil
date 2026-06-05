@@ -119,7 +119,7 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
 
     @Override
     public PointLightData setTo(Camera camera) {
-        Vec3 pos = camera.getPosition();
+        Vec3 pos = camera.position();
         this.position.set(pos.x, pos.y, pos.z);
         this.markDirty();
         return this;

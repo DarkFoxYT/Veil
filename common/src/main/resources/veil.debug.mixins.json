@@ -8,20 +8,6 @@
     "SimpleReloadInstanceMixin"
   ],
   "client": [
-    "accessor.DebugGameRendererAccessor",
-    "accessor.DebugLevelRendererAccessor",
-    "accessor.DebugPostChainAccessor",
-    "client.DebugActiveProfilerMixin",
-    "client.DebugAutoStorageIndexBufferMixin",
-    "client.DebugGlDebugMixin",
-    "client.DebugKeyboardHandlerMixin",
-    "client.DebugLevelRendererMixin",
-    "client.DebugMainMixin",
-    "client.DebugMinecraftMixin",
-    "client.DebugTextureManagerMixin",
-    "client.DebugVertexBufferMixin",
-    "client.DebugVertexFormatMixin",
-    "client.profiler.GameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

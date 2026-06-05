@@ -75,7 +75,7 @@ public final class VoxelShadowGrid {
             clearLevel();
         }
 
-        Vec3 cameraPos = client.gameRenderer.getMainCamera().getPosition();
+        Vec3 cameraPos = client.gameRenderer.getMainCamera().position();
         int cx = (int) Math.floor(cameraPos.x);
         int cy = (int) Math.floor(cameraPos.y);
         int cz = (int) Math.floor(cameraPos.z);
@@ -130,7 +130,7 @@ public final class VoxelShadowGrid {
     }
 
     public static void clearLevel() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
 
         gridDimension = null;
         if (gridBuffer != null) {
@@ -149,7 +149,7 @@ public final class VoxelShadowGrid {
     }
 
     public static void close() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         clearLevel();
         if (textureId != 0) {
             glDeleteTextures(textureId);
@@ -417,7 +417,7 @@ public final class VoxelShadowGrid {
     private static byte voxelOccupancy(ClientLevel level, BlockPos pos, BlockState state) {
         if (!state.canOcclude()) return 0;
         if (!state.getFluidState().isEmpty()) return 0;
-        return state.isSolidRender(level, pos) ? (byte) 0xFF : 0;
+        return state.isSolidRender() ? (byte) 0xFF : 0;
     }
 
     private static void uploadBuffer(ByteBuffer buffer) {
@@ -448,9 +448,10 @@ public final class VoxelShadowGrid {
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        ByteBuffer zeros = MemoryUtil.memCalloc(GRID_VOLUME);
-        glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, GRID_SIZE, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, zeros);
-        MemoryUtil.memFree(zeros);
+        int unpackAlignment = glGetInteger(GL_UNPACK_ALIGNMENT);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, GRID_SIZE, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, 0L);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, unpackAlignment);
         glBindTexture(GL_TEXTURE_3D, 0);
     }
 

@@ -2,7 +2,7 @@ package foundry.veil.api.compat;
 
 import foundry.veil.Veil;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +31,7 @@ public interface SodiumCompat {
     /**
      * @return A map of all shader IDs loaded by sodium
      */
-    Object2IntMap<ResourceLocation> getLoadedShaders();
+    Object2IntMap<Identifier> getLoadedShaders();
 
     /**
      * Recompiles all shaders from source.

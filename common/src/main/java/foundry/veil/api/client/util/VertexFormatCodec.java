@@ -8,7 +8,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 import java.util.Locale;
 import java.util.Map;
@@ -24,7 +24,7 @@ public class VertexFormatCodec {
             "NORMAL", VertexFormatElement.NORMAL,
             "UV", VertexFormatElement.UV);
     private static final Map<String, VertexFormat> DEFAULT_FORMATS = Map.ofEntries(
-            Map.entry("BLIT_SCREEN", DefaultVertexFormat.BLIT_SCREEN),
+            Map.entry("BLIT_SCREEN", DefaultVertexFormat.POSITION_TEX),
             Map.entry("BLOCK", DefaultVertexFormat.BLOCK),
             Map.entry("NEW_ENTITY", DefaultVertexFormat.NEW_ENTITY),
             Map.entry("PARTICLE", DefaultVertexFormat.PARTICLE),

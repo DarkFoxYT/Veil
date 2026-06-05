@@ -6,7 +6,7 @@ import io.github.ocelot.glslprocessor.api.grammar.GlslVersionStatement;
 import io.github.ocelot.glslprocessor.api.node.GlslNode;
 import io.github.ocelot.glslprocessor.api.node.GlslTree;
 import io.github.ocelot.glslprocessor.api.node.function.GlslFunctionNode;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,12 +19,12 @@ public class SimpleShaderModification implements ShaderModification {
 
     private final int version;
     private final int priority;
-    private final ResourceLocation[] includes;
+    private final Identifier[] includes;
     private final String output;
     private final String uniform;
     private final Function[] functions;
 
-    public SimpleShaderModification(int version, int priority, ResourceLocation[] includes, @Nullable String output, @Nullable String uniform, Function[] functions) {
+    public SimpleShaderModification(int version, int priority, Identifier[] includes, @Nullable String output, @Nullable String uniform, Function[] functions) {
         this.version = version;
         this.priority = priority;
         this.includes = includes;
@@ -43,7 +43,7 @@ public class SimpleShaderModification implements ShaderModification {
         }
 
         List<String> directives = tree.getDirectives();
-        for (ResourceLocation include : this.includes) {
+        for (Identifier include : this.includes) {
             directives.add("#include " + include);
         }
 

@@ -13,7 +13,7 @@ import foundry.veil.api.util.EnumCodec;
 import foundry.veil.ext.AbstractTextureExtension;
 import foundry.veil.impl.client.render.dynamicbuffer.DynamicBufferManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
@@ -25,7 +25,7 @@ import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
  */
 public sealed interface ShaderTextureSource permits LocationSource, FramebufferSource {
 
-    Codec<ShaderTextureSource> CODEC = Codec.either(ResourceLocation.CODEC,
+    Codec<ShaderTextureSource> CODEC = Codec.either(Identifier.CODEC,
                     Type.CODEC.<ShaderTextureSource>dispatch(ShaderTextureSource::type, Type::codec))
             .xmap(either -> either.map(name -> new LocationSource(name, null), right -> right),
                     source -> source instanceof LocationSource loc ? Either.left(loc.location()) : Either.right(source));
@@ -99,7 +99,7 @@ public sealed interface ShaderTextureSource permits LocationSource, FramebufferS
          * @param name The name of the framebuffer to retrieve
          * @return The framebuffer with that id or <code>null</code> if it was not found
          */
-        @Nullable AdvancedFbo getFramebuffer(ResourceLocation name);
+        @Nullable AdvancedFbo getFramebuffer(Identifier name);
 
         /**
          * Retrieves a texture by id.
@@ -107,7 +107,7 @@ public sealed interface ShaderTextureSource permits LocationSource, FramebufferS
          * @param name The name of the texture to retrieve
          * @return The texture with that id or the missing texture if it was not found
          */
-        default int getTexture(ResourceLocation name) {
+        default int getTexture(Identifier name) {
             if (Veil.MODID.equals(name.getNamespace()) && name.getPath().startsWith("dynamic_buffer")) {
                 DynamicBufferManager bufferManger = VeilRenderSystem.renderer().getDynamicBufferManger();
                 if (name.equals(VeilRenderer.ALBEDO_BUFFER_TEXTURE)) {
@@ -126,7 +126,7 @@ public sealed interface ShaderTextureSource permits LocationSource, FramebufferS
                     return bufferManger.getBufferTexture(DynamicBufferType.DEBUG);
                 }
             }
-            return Minecraft.getInstance().getTextureManager().getTexture(name).getId();
+            return VeilRenderSystem.getTextureId(Minecraft.getInstance().getTextureManager().getTexture(name));
         }
 
         /**
@@ -136,7 +136,7 @@ public sealed interface ShaderTextureSource permits LocationSource, FramebufferS
          * @return The target for that texture
          * @since 3.6.0
          */
-        default int getTextureTarget(ResourceLocation name) {
+        default int getTextureTarget(Identifier name) {
             if (Veil.MODID.equals(name.getNamespace()) && name.getPath().startsWith("dynamic_buffer")) {
                 return GL_TEXTURE_2D;
             }

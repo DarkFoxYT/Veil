@@ -1,6 +1,6 @@
 package foundry.veil.impl.client.render.shader.block;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.shader.block.ShaderBlock;
@@ -100,13 +100,13 @@ public abstract class ShaderBlockImpl<T> implements ShaderBlock<T> {
 
             @Override
             public void resize(int binding, int buffer, long size) {
-                RenderSystem.glBindBuffer(binding, buffer);
+                GlStateManager._glBindBuffer(binding, buffer);
                 glBufferData(binding, size, GL_DYNAMIC_DRAW);
             }
 
             @Override
             public void write(int binding, int buffer, ByteBuffer upload) {
-                RenderSystem.glBindBuffer(binding, buffer);
+                GlStateManager._glBindBuffer(binding, buffer);
                 glBufferSubData(binding, 0L, upload);
             }
         },

@@ -24,7 +24,7 @@ import foundry.veil.impl.client.render.pipeline.VeilFirstPersonRenderer;
 import foundry.veil.impl.client.render.rendertype.DynamicRenderTypeManager;
 import foundry.veil.mixin.pipeline.accessor.PipelineReloadableResourceManagerAccessor;
 import net.minecraft.ChatFormatting;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -44,13 +44,13 @@ import java.util.stream.Collectors;
  */
 public class VeilRenderer implements ResourceManagerReloadListener {
 
-    public static final ResourceLocation ALBEDO_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/albedo");
-    public static final ResourceLocation NORMAL_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/normal");
-    public static final ResourceLocation LIGHT_UV_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/light_uv");
-    public static final ResourceLocation LIGHT_COLOR_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/light_color");
-    public static final ResourceLocation DEBUG_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/debug");
+    public static final Identifier ALBEDO_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/albedo");
+    public static final Identifier NORMAL_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/normal");
+    public static final Identifier LIGHT_UV_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/light_uv");
+    public static final Identifier LIGHT_COLOR_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/light_color");
+    public static final Identifier DEBUG_BUFFER_TEXTURE = Veil.veilPath("dynamic_buffer/debug");
 
-    public static final ResourceLocation COMPOSITE = Veil.veilPath("core/composite");
+    public static final Identifier COMPOSITE = Veil.veilPath("core/composite");
 
     private final VanillaShaderCompiler vanillaShaderCompiler;
     private final DynamicBufferManager dynamicBufferManager;
@@ -117,8 +117,8 @@ public class VeilRenderer implements ResourceManagerReloadListener {
      * @param buffers The buffers to enable
      * @return Whether any change occurred
      */
-    public boolean enableBuffers(ResourceLocation name, DynamicBufferType... buffers) {
-        RenderSystem.assertOnRenderThreadOrInit();
+    public boolean enableBuffers(Identifier name, DynamicBufferType... buffers) {
+        RenderSystem.assertOnRenderThread();
         if (buffers.length == 0) {
             return false;
         }
@@ -133,8 +133,8 @@ public class VeilRenderer implements ResourceManagerReloadListener {
      * @param buffers The buffers to disable
      * @return Whether any change occurred
      */
-    public boolean disableBuffers(ResourceLocation name, DynamicBufferType... buffers) {
-        RenderSystem.assertOnRenderThreadOrInit();
+    public boolean disableBuffers(Identifier name, DynamicBufferType... buffers) {
+        RenderSystem.assertOnRenderThread();
         if (buffers.length == 0) {
             return false;
         }
@@ -149,8 +149,8 @@ public class VeilRenderer implements ResourceManagerReloadListener {
      * @param name The name of the "source" of the buffer change
      * @return Whether any change occurred
      */
-    public boolean disableBuffers(ResourceLocation name) {
-        RenderSystem.assertOnRenderThreadOrInit();
+    public boolean disableBuffers(Identifier name) {
+        RenderSystem.assertOnRenderThread();
         return this.dynamicBufferManager.setActiveBuffers(name, 0);
     }
 

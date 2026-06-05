@@ -158,7 +158,7 @@ public interface VeilPacketManager {
             throw new IllegalStateException("Cannot send clientbound payloads on the client");
         }
 
-        return packet -> chunkCache.broadcast(entity, packet);
+        return packet -> chunkCache.sendToTrackingPlayers(entity, (Packet<? super ClientGamePacketListener>) packet);
     }
 
     /**
@@ -173,7 +173,7 @@ public interface VeilPacketManager {
             throw new IllegalStateException("Cannot send clientbound payloads on the client");
         }
 
-        return packet -> chunkCache.broadcastAndSend(entity, packet);
+        return packet -> chunkCache.sendToTrackingPlayersAndSelf(entity, (Packet<? super ClientGamePacketListener>) packet);
     }
 
     /**

@@ -16,6 +16,14 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import static org.lwjgl.opengl.ARBMultiDrawIndirect.glMultiDrawElementsIndirect;
+import static org.lwjgl.opengl.GL11C.GL_LINES;
+import static org.lwjgl.opengl.GL11C.GL_LINE_STRIP;
+import static org.lwjgl.opengl.GL11C.GL_POINTS;
+import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL11C.GL_TRIANGLE_FAN;
+import static org.lwjgl.opengl.GL11C.GL_TRIANGLE_STRIP;
+import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_INT;
+import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_SHORT;
 import static org.lwjgl.opengl.GL11C.glDrawArrays;
 import static org.lwjgl.opengl.GL11C.glGetInteger;
 import static org.lwjgl.opengl.GL15C.GL_ELEMENT_ARRAY_BUFFER;
@@ -103,21 +111,40 @@ public abstract class PipelineVertexBufferMixin implements VertexBufferExtension
             }
         }
 
-        glDrawElementsInstanced(this.veil$getDrawMode(this.mode.asGLMode), this.indexCount, this.getIndexType().asGLType, 0L, instances);
+        glDrawElementsInstanced(this.veil$getDrawMode(veil$glMode(this.mode)), this.indexCount, veil$glType(this.getIndexType()), 0L, instances);
     }
 
     @Unique
     private void _veil$drawIndirect(long indirect, int drawCount, int stride) {
         if (!VeilRenderSystem.multiDrawIndirectSupported()) {
-            throw new UnsupportedOperationException("Indirect rendering is not supported");
+            throw new UnsupportedOperationException("Indirect rendering is not supported by the active rendering backend");
         }
 
         if (this.sequentialIndices != null) {
-            this.sequentialIndices.bind(this.indexCount);
-            glMultiDrawElementsIndirect(this.veil$getDrawMode(this.mode.asGLMode), this.sequentialIndices.type().asGLType, indirect, drawCount, stride);
+            throw new UnsupportedOperationException("Sequential indirect rendering is not supported");
         } else {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.indexBufferId);
-            glMultiDrawElementsIndirect(this.veil$getDrawMode(this.mode.asGLMode), this.indexType.asGLType, indirect, drawCount, stride);
+            glMultiDrawElementsIndirect(this.veil$getDrawMode(veil$glMode(this.mode)), veil$glType(this.indexType), indirect, drawCount, stride);
         }
+    }
+
+    @Unique
+    private static int veil$glMode(VertexFormat.Mode mode) {
+        return switch (mode) {
+            case LINES, DEBUG_LINES -> GL_LINES;
+            case DEBUG_LINE_STRIP -> GL_LINE_STRIP;
+            case POINTS -> GL_POINTS;
+            case TRIANGLES, QUADS -> GL_TRIANGLES;
+            case TRIANGLE_STRIP -> GL_TRIANGLE_STRIP;
+            case TRIANGLE_FAN -> GL_TRIANGLE_FAN;
+        };
+    }
+
+    @Unique
+    private static int veil$glType(VertexFormat.IndexType type) {
+        return switch (type) {
+            case SHORT -> GL_UNSIGNED_SHORT;
+            case INT -> GL_UNSIGNED_INT;
+        };
     }
 }

@@ -3,10 +3,11 @@ package foundry.veil.api.client.render.texture;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
-import net.minecraft.Util;
+import foundry.veil.api.client.render.VeilRenderSystem;
+import net.minecraft.util.Util;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.metadata.texture.TextureMetadataSection;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.NotNull;
@@ -26,11 +27,11 @@ public class SimpleArrayTexture extends ArrayTexture implements VeilPreloadedTex
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    protected final ResourceLocation[] locations;
+    protected final Identifier[] locations;
 
     private CompletableFuture<TextureImage[]> imagesFuture;
 
-    public SimpleArrayTexture(ResourceLocation... locations) {
+    public SimpleArrayTexture(Identifier... locations) {
         if (locations.length == 0) {
             throw new IllegalStateException("SimpleArrayTexture requires at least one location");
         }
@@ -46,7 +47,6 @@ public class SimpleArrayTexture extends ArrayTexture implements VeilPreloadedTex
         return this.imagesFuture;
     }
 
-    @Override
     public void load(@NotNull ResourceManager resourceManager) throws IOException {
         TextureImage[] textureImages = this.getTextureImages(resourceManager);
         NativeImage[] images = new NativeImage[textureImages.length];
@@ -65,16 +65,16 @@ public class SimpleArrayTexture extends ArrayTexture implements VeilPreloadedTex
         boolean blur;
         boolean clamp;
         if (texturemetadatasection != null) {
-            blur = texturemetadatasection.isBlur();
-            clamp = texturemetadatasection.isClamp();
+            blur = texturemetadatasection.blur();
+            clamp = texturemetadatasection.clamp();
         } else {
             blur = false;
             clamp = false;
         }
 
         this.setFilter(blur, clamp);
-        if (!RenderSystem.isOnRenderThreadOrInit()) {
-            RenderSystem.recordRenderCall(() -> this.loadImages(images));
+        if (!RenderSystem.isOnRenderThread()) {
+            VeilRenderSystem.renderThreadExecutor().execute(() -> this.loadImages(images));
         } else {
             this.loadImages(images);
         }
@@ -91,8 +91,7 @@ public class SimpleArrayTexture extends ArrayTexture implements VeilPreloadedTex
         }
     }
 
-    @Override
-    public void reset(@NotNull TextureManager textureManager, @NotNull ResourceManager resourceManager, @NotNull ResourceLocation location, @NotNull Executor gameExecutor) {
+    public void reset(@NotNull TextureManager textureManager, @NotNull ResourceManager resourceManager, @NotNull Identifier location, @NotNull Executor gameExecutor) {
         this.preload(resourceManager, Util.backgroundExecutor()).thenRunAsync(() -> textureManager.register(location, this), gameExecutor);
     }
 
@@ -124,7 +123,7 @@ public class SimpleArrayTexture extends ArrayTexture implements VeilPreloadedTex
             this.exception = null;
         }
 
-        public static TextureImage[] load(ResourceManager resourceManager, ResourceLocation... locations) {
+        public static TextureImage[] load(ResourceManager resourceManager, Identifier... locations) {
             TextureImage[] images = new TextureImage[locations.length];
             if (locations.length == 0) {
                 return images;
@@ -135,7 +134,7 @@ public class SimpleArrayTexture extends ArrayTexture implements VeilPreloadedTex
             for (int i = 0; i < locations.length; i++) {
                 NativeImage image = null;
                 try {
-                    ResourceLocation location = locations[i];
+                    Identifier location = locations[i];
                     Resource resource = resourceManager.getResourceOrThrow(location);
 
                     try (InputStream inputstream = resource.open()) {
@@ -150,7 +149,7 @@ public class SimpleArrayTexture extends ArrayTexture implements VeilPreloadedTex
 
                     TextureMetadataSection metadata = null;
                     try {
-                        metadata = resource.metadata().getSection(TextureMetadataSection.SERIALIZER).orElse(null);
+                        metadata = resource.metadata().getSection(TextureMetadataSection.TYPE).orElse(null);
                     } catch (Exception e) {
                         LOGGER.warn("Failed reading metadata of: {}", location, e);
                     }

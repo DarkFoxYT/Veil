@@ -1,12 +1,14 @@
 package foundry.veil.api.client.render.vertex;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.rendertype.VeilRenderType;
+import foundry.veil.api.client.render.rendertype.VeilRenderTypeAccessor;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
 import foundry.veil.impl.client.render.vertex.ARBVertexArray;
 import foundry.veil.impl.client.render.vertex.DSAVertexArray;
@@ -14,7 +16,7 @@ import foundry.veil.impl.client.render.vertex.LegacyVertexArray;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -22,6 +24,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL40C;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.NativeResource;
 
 import java.nio.ByteBuffer;
@@ -94,7 +97,7 @@ public abstract class VertexArray implements NativeResource {
      * @return A new vertex array
      */
     public static VertexArray create() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         loadType();
         return vertexArrayType.factory.apply(VeilRenderSystem.directStateAccessSupported() ? glCreateVertexArrays() : glGenVertexArrays());
     }
@@ -117,7 +120,7 @@ public abstract class VertexArray implements NativeResource {
      * @param fill The array to fill
      */
     public static void create(VertexArray[] fill) {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         if (fill.length == 0) {
             return;
         }
@@ -144,12 +147,51 @@ public abstract class VertexArray implements NativeResource {
      * @since 1.2.0
      */
     public void setup(RenderType renderType) {
-        renderType.setupRenderState();
-        ShaderInstance shader = RenderSystem.getShader();
+        VeilRenderTypeAccessor accessor = VeilRenderType.getShards(renderType);
+        accessor.outputState().setupRenderState();
+        accessor.shaderState().setupRenderState();
+
+        ShaderProgram shader = VeilRenderSystem.getShader();
         if (shader != null) {
-            shader.setDefaultUniforms(this.drawMode, RenderSystem.getModelViewMatrix(), RenderSystem.getProjectionMatrix(), Minecraft.getInstance().getWindow());
-            shader.apply();
+            shader.setDefaultUniforms(this.drawMode);
+            shader.bindSamplers(0);
         }
+
+        BlendFunction blend = accessor.transparencyState().blendFunction();
+        if (blend == BlendFunction.ADDITIVE) {
+            GlStateManager._enableBlend();
+            GlStateManager._blendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
+        } else if (blend != null) {
+            GlStateManager._enableBlend();
+            GlStateManager._blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        } else {
+            GlStateManager._disableBlend();
+        }
+
+        String depthName = accessor.depthTestState().name();
+        if ("always".equals(depthName)) {
+            GlStateManager._disableDepthTest();
+        } else {
+            GlStateManager._enableDepthTest();
+            GlStateManager._depthFunc(switch (depthName) {
+                case ">", "greater" -> GL_GREATER;
+                case "=", "equal" -> GL_EQUAL;
+                case "<", "less" -> GL_LESS;
+                case ">=", "gequal" -> GL_GEQUAL;
+                case "!=", "notequal" -> GL_NOTEQUAL;
+                default -> GL_LEQUAL;
+            });
+        }
+
+        if (accessor.cullState().cull()) {
+            GlStateManager._enableCull();
+        } else {
+            GlStateManager._disableCull();
+        }
+
+        boolean color = accessor.writeMaskState().writeColor();
+        GlStateManager._colorMask(color, color, color, color);
+        GlStateManager._depthMask(accessor.writeMaskState().writeDepth());
     }
 
     /**
@@ -159,11 +201,16 @@ public abstract class VertexArray implements NativeResource {
      * @since 1.2.0
      */
     public void clear(RenderType renderType) {
-        ShaderInstance shader = RenderSystem.getShader();
-        if (shader != null) {
-            shader.clear();
-        }
-        renderType.clearRenderState();
+        VeilRenderTypeAccessor accessor = VeilRenderType.getShards(renderType);
+        accessor.outputState().clearRenderState();
+        ShaderProgram.unbind();
+        GlStateManager._enableDepthTest();
+        GlStateManager._depthFunc(GL_LEQUAL);
+        GlStateManager._depthMask(true);
+        GlStateManager._colorMask(true, true, true, true);
+        GlStateManager._disableBlend();
+        GlStateManager._blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+        GlStateManager._enableCull();
     }
 
     /**
@@ -270,8 +317,29 @@ public abstract class VertexArray implements NativeResource {
      * @param drawState The buffer draw state
      */
     public void uploadIndexBuffer(MeshData.DrawState drawState) {
-        this.indexBuffer = RenderSystem.getSequentialBuffer(drawState.mode());
-        this.indexBuffer.bind(drawState.indexCount());
+        this.indexBuffer = null;
+        IndexType indexType = IndexType.fromBlaze3D(drawState.indexType());
+        ByteBuffer data = MemoryUtil.memAlloc(drawState.indexCount() * indexType.getBytes());
+        try {
+            if (drawState.mode() == VertexFormat.Mode.QUADS) {
+                for (int vertex = 0; data.position() < data.capacity(); vertex += 4) {
+                    putIndex(data, indexType, vertex);
+                    putIndex(data, indexType, vertex + 1);
+                    putIndex(data, indexType, vertex + 2);
+                    putIndex(data, indexType, vertex + 2);
+                    putIndex(data, indexType, vertex + 3);
+                    putIndex(data, indexType, vertex);
+                }
+            } else {
+                for (int i = 0; i < drawState.indexCount(); i++) {
+                    putIndex(data, indexType, i);
+                }
+            }
+            data.flip();
+            this.uploadIndexBuffer(data);
+        } finally {
+            MemoryUtil.memFree(data);
+        }
     }
 
     /**
@@ -282,7 +350,7 @@ public abstract class VertexArray implements NativeResource {
     public void uploadIndexBuffer(ByteBuffer data) {
         this.indexBuffer = null;
         GlStateManager._glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.getOrCreateBuffer(ELEMENT_ARRAY_BUFFER));
-        RenderSystem.glBufferData(GL_ELEMENT_ARRAY_BUFFER, data, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, data, GL_STATIC_DRAW);
     }
 
     /**
@@ -312,13 +380,7 @@ public abstract class VertexArray implements NativeResource {
         VeilRenderSystem.bindVertexArray(this.id);
 
         // Because the auto index buffers can decide to change formats occasionally, this is needed to keep the type correct
-        if (this.indexBuffer != null) {
-            IndexType expectedIndexType = IndexType.fromBlaze3D(this.indexBuffer.type());
-            if (this.indexType != expectedIndexType) {
-                this.indexBuffer.bind(this.indexCount);
-                this.indexType = expectedIndexType;
-            }
-        }
+        this.indexBuffer = null;
     }
 
     /**
@@ -347,7 +409,7 @@ public abstract class VertexArray implements NativeResource {
             return;
         }
 
-        glDrawElements(this.drawMode.asGLMode, this.indexCount, this.indexType.getGlType(), 0L);
+        glDrawElements(glMode(this.drawMode), this.indexCount, this.indexType.getGlType(), 0L);
     }
 
     /**
@@ -371,7 +433,7 @@ public abstract class VertexArray implements NativeResource {
             return;
         }
 
-        glDrawElementsInstanced(this.drawMode.asGLMode, this.indexCount, this.indexType.getGlType(), 0L, instances);
+        glDrawElementsInstanced(glMode(this.drawMode), this.indexCount, this.indexType.getGlType(), 0L, instances);
     }
 
     /**
@@ -387,10 +449,10 @@ public abstract class VertexArray implements NativeResource {
      */
     public void drawIndirect(long indirect, int drawCount, int stride) {
         if (!VeilRenderSystem.multiDrawIndirectSupported()) {
-            throw new UnsupportedOperationException("Indirect rendering is not supported");
+            throw new UnsupportedOperationException("Indirect rendering is not supported by the active rendering backend");
         }
 
-        glMultiDrawElementsIndirect(this.drawMode.asGLMode, this.indexType.getGlType(), indirect, drawCount, stride);
+        glMultiDrawElementsIndirect(glMode(this.drawMode), this.indexType.getGlType(), indirect, drawCount, stride);
     }
 
     /**
@@ -400,10 +462,6 @@ public abstract class VertexArray implements NativeResource {
      * {@link #bind()} must be called before this.
      */
     public void drawWithRenderType(RenderType renderType) {
-        while (renderType instanceof VeilRenderType.RenderTypeWrapper wrapper) {
-            renderType = wrapper.get();
-        }
-
         if (renderType == null) {
             return;
         }
@@ -412,13 +470,6 @@ public abstract class VertexArray implements NativeResource {
         this.draw();
         this.clear(renderType);
 
-        if (renderType instanceof VeilRenderType.LayeredRenderType layeredRenderType) {
-            for (RenderType layer : layeredRenderType.getLayers()) {
-                this.setup(layer);
-                this.draw();
-                this.clear(layer);
-            }
-        }
     }
 
     /**
@@ -430,10 +481,6 @@ public abstract class VertexArray implements NativeResource {
      * @param instances The number of instances to draw
      */
     public void drawInstancedWithRenderType(RenderType renderType, int instances) {
-        while (renderType instanceof VeilRenderType.RenderTypeWrapper wrapper) {
-            renderType = wrapper.get();
-        }
-
         if (renderType == null) {
             return;
         }
@@ -442,13 +489,6 @@ public abstract class VertexArray implements NativeResource {
         this.drawInstanced(instances);
         this.clear(renderType);
 
-        if (renderType instanceof VeilRenderType.LayeredRenderType layeredRenderType) {
-            for (RenderType layer : layeredRenderType.getLayers()) {
-                this.setup(layer);
-                this.drawInstanced(instances);
-                this.clear(layer);
-            }
-        }
     }
 
     /**
@@ -464,10 +504,6 @@ public abstract class VertexArray implements NativeResource {
      * @param stride    The stride between commands or <code>0</code> if they are tightly packed
      */
     public void drawIndirectWithRenderType(RenderType renderType, long indirect, int drawCount, int stride) {
-        while (renderType instanceof VeilRenderType.RenderTypeWrapper wrapper) {
-            renderType = wrapper.get();
-        }
-
         if (renderType == null) {
             return;
         }
@@ -476,13 +512,6 @@ public abstract class VertexArray implements NativeResource {
         this.drawIndirect(indirect, drawCount, stride);
         this.clear(renderType);
 
-        if (renderType instanceof VeilRenderType.LayeredRenderType layeredRenderType) {
-            for (RenderType layer : layeredRenderType.getLayers()) {
-                this.setup(layer);
-                this.drawIndirect(indirect, drawCount, stride);
-                this.clear(layer);
-            }
-        }
     }
 
     /**
@@ -505,9 +534,28 @@ public abstract class VertexArray implements NativeResource {
         this.drawMode = drawMode;
     }
 
+    private static void putIndex(ByteBuffer data, IndexType indexType, int value) {
+        switch (indexType) {
+            case BYTE -> data.put((byte) value);
+            case SHORT -> data.putShort((short) value);
+            case INT -> data.putInt(value);
+        }
+    }
+
+    private static int glMode(VertexFormat.Mode mode) {
+        return switch (mode) {
+            case LINES, DEBUG_LINES -> GL_LINES;
+            case DEBUG_LINE_STRIP -> GL_LINE_STRIP;
+            case POINTS -> GL_POINTS;
+            case TRIANGLES, QUADS -> GL_TRIANGLES;
+            case TRIANGLE_STRIP -> GL_TRIANGLE_STRIP;
+            case TRIANGLE_FAN -> GL_TRIANGLE_FAN;
+        };
+    }
+
     @Override
     public void free() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         glDeleteBuffers(this.buffers.values().toIntArray());
         glDeleteVertexArrays(this.id);
         this.buffers.clear();

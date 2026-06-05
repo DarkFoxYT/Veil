@@ -1,6 +1,6 @@
 package foundry.veil.api.client.render.texture;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.api.client.render.VeilRenderSystem;
@@ -18,15 +18,18 @@ public abstract class ArrayTexture extends AbstractTexture implements AbstractTe
 
     private int width;
     private int height;
+    private int id = -1;
+    private boolean blur;
+    private boolean mipmap;
 
     protected void init(int format, int mipmapLevel, int width, int height, int depth) {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         this.bind();
         if (mipmapLevel >= 0) {
             GlStateManager._texParameter(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, mipmapLevel);
             GlStateManager._texParameter(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_LOD, 0);
             GlStateManager._texParameter(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LOD, mipmapLevel);
-            GlStateManager._texParameter(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_LOD_BIAS, 0.0F);
+            glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_LOD_BIAS, 0.0F);
         }
 
         this.width = width;
@@ -43,13 +46,12 @@ public abstract class ArrayTexture extends AbstractTexture implements AbstractTe
             if (image.getWidth() != this.width || image.getHeight() != this.height) {
                 throw new IllegalArgumentException("Image dimensions don't match");
             }
-            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, image.getWidth(), image.getHeight(), 1, image.format().glFormat(), GL_UNSIGNED_BYTE, ((PipelineNativeImageAccessor) (Object) image).getPixels());
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, image.getWidth(), image.getHeight(), 1, VeilRenderSystem.getGlFormat(image.format()), GL_UNSIGNED_BYTE, ((PipelineNativeImageAccessor) (Object) image).getPixels());
         }
     }
 
-    @Override
     public void setFilter(boolean blur, boolean mipmap) {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         this.blur = blur;
         this.mipmap = mipmap;
         int minFilter;
@@ -73,9 +75,8 @@ public abstract class ArrayTexture extends AbstractTexture implements AbstractTe
         }
     }
 
-    @Override
     public int getId() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         if (this.id == -1) {
             this.id = VeilRenderSystem.createTextures(GL_TEXTURE_2D_ARRAY);
         }
@@ -83,7 +84,6 @@ public abstract class ArrayTexture extends AbstractTexture implements AbstractTe
         return this.id;
     }
 
-    @Override
     public void bind() {
         glBindTexture(GL_TEXTURE_2D_ARRAY, this.getId());
     }

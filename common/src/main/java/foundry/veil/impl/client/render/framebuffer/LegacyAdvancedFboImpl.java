@@ -1,8 +1,9 @@
 package foundry.veil.impl.client.render.framebuffer;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.ext.VeilDebug;
 import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.framebuffer.AdvancedFboAttachment;
@@ -38,7 +39,7 @@ public class LegacyAdvancedFboImpl extends AdvancedFboImpl {
         if (this.depthAttachment != null) {
             this.depthAttachment.create();
         }
-        RenderSystem.bindTexture(0);
+        GlStateManager._bindTexture(0);
 
         int oldFbo = glGetInteger(GL_FRAMEBUFFER_BINDING);
         this.id = glGenFramebuffers();
@@ -94,7 +95,10 @@ public class LegacyAdvancedFboImpl extends AdvancedFboImpl {
                 glClearDepth(depth);
             }
 
-            GlStateManager._clear(clearMask, Minecraft.ON_OSX);
+            GlStateManager._clear(clearMask);
+            if (net.minecraft.util.Util.getPlatform() == net.minecraft.util.Util.OS.OSX) {
+                glGetError();
+            }
 
             if (hasColor) {
                 glClearColor(oldColor.get(0), oldColor.get(1), oldColor.get(2), oldColor.get(3));
@@ -110,7 +114,7 @@ public class LegacyAdvancedFboImpl extends AdvancedFboImpl {
             }
         }
 
-        if (Minecraft.ON_OSX) {
+        if ((net.minecraft.util.Util.getPlatform() == net.minecraft.util.Util.OS.OSX)) {
             glGetError();
         }
     }
@@ -178,7 +182,7 @@ public class LegacyAdvancedFboImpl extends AdvancedFboImpl {
         int oldDraw = glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING);
 
         this.bindRead();
-        GlStateManager._glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.frameBufferId);
+        GlStateManager._glBindFramebuffer(GL_DRAW_FRAMEBUFFER, VeilRenderSystem.getFramebufferId(target));
         glBlitFramebuffer(0, 0, this.getWidth(), this.getHeight(), 0, 0, target.width, target.height, mask, filtering);
 
         GlStateManager._glBindFramebuffer(GL_READ_FRAMEBUFFER, oldRead);

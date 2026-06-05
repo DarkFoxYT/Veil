@@ -8,12 +8,12 @@ import foundry.veil.api.quasar.data.module.ModuleType;
 import foundry.veil.api.quasar.data.module.ParticleModuleData;
 import foundry.veil.api.quasar.emitters.module.update.TickSubEmitterModule;
 import foundry.veil.api.quasar.particle.ParticleModuleSet;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public record TickSubEmitterModuleData(ResourceLocation subEmitter, int frequency) implements ParticleModuleData {
+public record TickSubEmitterModuleData(Identifier subEmitter, int frequency) implements ParticleModuleData {
 
     public static final MapCodec<TickSubEmitterModuleData> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("subemitter").forGetter(TickSubEmitterModuleData::subEmitter),
+            Identifier.CODEC.fieldOf("subemitter").forGetter(TickSubEmitterModuleData::subEmitter),
             Codec.INT.fieldOf("frequency").forGetter(TickSubEmitterModuleData::frequency)
     ).apply(instance, TickSubEmitterModuleData::new));
 

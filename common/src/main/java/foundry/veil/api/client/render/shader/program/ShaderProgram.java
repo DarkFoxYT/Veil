@@ -1,6 +1,6 @@
 package foundry.veil.api.client.render.shader.program;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -14,9 +14,10 @@ import foundry.veil.impl.client.render.shader.program.ShaderProgramImpl;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.client.renderer.EffectInstance;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.lwjgl.system.NativeResource;
 
@@ -42,10 +43,8 @@ public interface ShaderProgram extends NativeResource, UniformAccess, TextureUni
      */
     default void bind() {
         int program = this.getProgram();
-        if (ShaderInstance.lastProgramId != program) {
-            ShaderInstance.lastProgramId = program;
-            GlStateManager._glUseProgram(program);
-        }
+        ShaderInstance.lastProgramId = program;
+        GlStateManager._glUseProgram(program);
         EffectInstance.lastProgramId = -1;
     }
 
@@ -67,7 +66,7 @@ public interface ShaderProgram extends NativeResource, UniformAccess, TextureUni
      * @param mode The expected draw mode
      */
     default void setDefaultUniforms(VertexFormat.Mode mode) {
-        this.setDefaultUniforms(mode, RenderSystem.getModelViewMatrix(), RenderSystem.getProjectionMatrix());
+        this.setDefaultUniforms(mode, RenderSystem.getModelViewMatrix(), new Matrix4f());
     }
 
     /**
@@ -230,7 +229,7 @@ public interface ShaderProgram extends NativeResource, UniformAccess, TextureUni
     /**
      * @return The name of this program
      */
-    ResourceLocation getName();
+    Identifier getName();
 
     /**
      * <p>Wraps this shader with a vanilla Minecraft shader instance wrapper. There are a few special properties about the shader wrapper.</p>

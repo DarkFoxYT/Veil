@@ -3,7 +3,7 @@ package foundry.veil.mixin.resource.client;
 import foundry.veil.ext.TextureAtlasExtension;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.TextureAtlasHolder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -16,7 +16,7 @@ public class ResourceTextureAtlasHolderMixin implements TextureAtlasExtension {
     private TextureAtlas textureAtlas;
 
     @Override
-    public boolean veil$hasTexture(ResourceLocation location) {
+    public boolean veil$hasTexture(Identifier location) {
         return ((TextureAtlasExtension) this.textureAtlas).veil$hasTexture(location);
     }
 }

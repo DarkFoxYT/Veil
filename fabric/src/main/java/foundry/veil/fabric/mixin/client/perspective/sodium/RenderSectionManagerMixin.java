@@ -11,6 +11,7 @@ import net.caffeinemc.mods.sodium.client.render.chunk.lists.SectionCollector;
 import net.caffeinemc.mods.sodium.client.render.chunk.occlusion.OcclusionCuller;
 import net.caffeinemc.mods.sodium.client.render.chunk.translucent_sorting.SortBehavior;
 import net.caffeinemc.mods.sodium.client.render.viewport.Viewport;
+import net.caffeinemc.mods.sodium.client.util.FogParameters;
 import net.minecraft.client.Camera;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
@@ -37,7 +38,7 @@ public abstract class RenderSectionManagerMixin {
     protected abstract boolean shouldUseOcclusionCulling(Camera camera, boolean spectator);
 
     @Shadow
-    protected abstract float getSearchDistance();
+    protected abstract float getSearchDistance(FogParameters fogParameters);
 
     @Shadow
     protected abstract void resetRenderLists();
@@ -56,13 +57,13 @@ public abstract class RenderSectionManagerMixin {
     private SectionCollector lastSectionCollector;
 
     @Inject(method = "createTerrainRenderList", at = @At("HEAD"), cancellable = true)
-    private void createTerrainRenderList(Camera camera, Viewport viewport, int frame, boolean spectator, CallbackInfoReturnable<Boolean> cir) {
+    private void createTerrainRenderList(Camera camera, Viewport viewport, FogParameters fogParameters, int frame, boolean spectator, CallbackInfoReturnable<Boolean> cir) {
         if (!VeilLevelPerspectiveRenderer.isRenderingPerspective()) {
             return;
         }
 
         this.resetRenderLists();
-        float searchDistance = this.getSearchDistance();
+        float searchDistance = this.getSearchDistance(fogParameters);
         boolean useOcclusionCulling = this.shouldUseOcclusionCulling(camera, spectator);
         TaskQueueType importantRebuildQueueType = SodiumClientMod.options().performance.chunkBuildDeferMode.getImportantRebuildQueueType();
         TaskQueueType importantSortQueueType = this.sortBehavior.getDeferMode().getImportantRebuildQueueType();

@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(EffectInstance.class)
 public class ShaderEffectInstanceMixin {
 
-    @Inject(method = "getOrCreate", at = @At("HEAD"))
+    @Inject(method = "getOrCreate", at = @At("HEAD"), require = 0)
     private static void veil$setupFallbackProcessor(ResourceProvider resourceProvider, Program.Type type, String name, CallbackInfoReturnable<EffectProgram> cir) {
         if (Veil.platform().hasErrors()) {
             return;
@@ -22,7 +22,7 @@ public class ShaderEffectInstanceMixin {
         VanillaShaderProcessor.setup(resourceProvider);
     }
 
-    @Inject(method = "getOrCreate", at = @At("RETURN"))
+    @Inject(method = "getOrCreate", at = @At("RETURN"), require = 0)
     private static void veil$clearFallbackProcessor(CallbackInfoReturnable<EffectProgram> cir) {
         if (Veil.platform().hasErrors()) {
             return;

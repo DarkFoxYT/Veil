@@ -6,8 +6,8 @@ import foundry.veil.api.client.render.shader.ShaderFeature;
 import io.github.ocelot.glslprocessor.api.GlslSyntaxException;
 import io.github.ocelot.glslprocessor.api.node.GlslTree;
 import io.github.ocelot.glslprocessor.lib.anarres.cpp.LexerException;
-import net.minecraft.ResourceLocationException;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.IdentifierException;
+import net.minecraft.resources.Identifier;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,8 +40,8 @@ public class ShaderBufferProcessor implements ShaderPreProcessor {
             String interfaceName = parts.length > 1 ? parts[1].trim() : null;
 
             try {
-                ResourceLocation name = ResourceLocation.parse(bufferId);
-                VeilShaderBufferLayout<?> layout = VeilShaderBufferRegistry.REGISTRY.get(name);
+                Identifier name = Identifier.parse(bufferId);
+                VeilShaderBufferLayout<?> layout = VeilShaderBufferRegistry.REGISTRY.get(name).map(holder -> holder.value()).orElse(null);
                 if (layout == null) {
                     throw new IOException("Unknown buffer: " + name);
                 }
@@ -49,7 +49,7 @@ public class ShaderBufferProcessor implements ShaderPreProcessor {
                 GlslTree loadedImport = new GlslTree();
                 loadedImport.getBody().add(layout.createNode(ctx.hasFeatures(ShaderFeature.SHADER_STORAGE), interfaceName));
                 ctx.include(tree, "#buffer " + name, loadedImport, IncludeOverloadStrategy.INCLUDE);
-            } catch (ResourceLocationException e) {
+            } catch (IdentifierException e) {
                 throw new IOException("Invalid buffer: " + bufferId, e);
             }
         }

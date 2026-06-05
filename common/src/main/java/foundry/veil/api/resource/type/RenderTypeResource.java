@@ -5,9 +5,9 @@ import foundry.veil.api.resource.VeilResourceAction;
 import foundry.veil.api.resource.VeilResourceInfo;
 import foundry.veil.api.resource.VeilResourceManager;
 import foundry.veil.impl.resource.action.TextEditAction;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.profiling.InactiveProfiler;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ public record RenderTypeResource(VeilResourceInfo resourceInfo) implements VeilT
 
     @Override
     public void hotReload(VeilResourceManager resourceManager) throws IOException {
-        VeilRenderSystem.renderer().getDynamicRenderTypeManager().reload(CompletableFuture::completedFuture, resourceManager.resources(this.resourceInfo), InactiveProfiler.INSTANCE, InactiveProfiler.INSTANCE, Util.backgroundExecutor(), Minecraft.getInstance());
+        VeilRenderSystem.renderer().getDynamicRenderTypeManager().reload(new PreparableReloadListener.SharedState(resourceManager.resources(this.resourceInfo)), Util.backgroundExecutor(), CompletableFuture::completedFuture, Minecraft.getInstance());
     }
 
     @Override

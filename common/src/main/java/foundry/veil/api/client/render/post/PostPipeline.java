@@ -9,7 +9,7 @@ import foundry.veil.api.client.render.shader.program.TextureUniformAccess;
 import foundry.veil.api.client.render.shader.program.UniformAccess;
 import foundry.veil.api.client.render.shader.texture.ShaderTextureSource;
 import foundry.veil.api.client.render.shader.uniform.ShaderUniformAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.NativeResource;
@@ -118,7 +118,7 @@ public interface PostPipeline extends UniformAccess, NativeResource {
          * @param name        The name of the framebuffer
          * @param framebuffer The framebuffer to set
          */
-        void setFramebuffer(ResourceLocation name, AdvancedFbo framebuffer);
+        void setFramebuffer(Identifier name, AdvancedFbo framebuffer);
 
         /**
          * Applies each sampler to the specified shader.
@@ -140,7 +140,7 @@ public interface PostPipeline extends UniformAccess, NativeResource {
          * @param name The name of the framebuffer to retrieve
          * @return The framebuffer with that id or the main framebuffer
          */
-        default AdvancedFbo getFramebufferOrDraw(ResourceLocation name) {
+        default AdvancedFbo getFramebufferOrDraw(Identifier name) {
             AdvancedFbo fbo = this.getFramebuffer(name);
             return fbo != null ? fbo : this.getDrawFramebuffer();
         }
@@ -156,7 +156,7 @@ public interface PostPipeline extends UniformAccess, NativeResource {
          * @param name The name of the pipeline to get
          * @return The registered pipeline or <code>null</code> if it couldn't be found
          */
-        default @Nullable PostPipeline getPipeline(ResourceLocation name) {
+        default @Nullable PostPipeline getPipeline(Identifier name) {
             return VeilRenderSystem.renderer().getPostProcessingManager().getPipeline(name);
         }
 
@@ -166,7 +166,7 @@ public interface PostPipeline extends UniformAccess, NativeResource {
          * @param name The name of the shader to get
          * @return The registered shader or <code>null</code> if it couldn't be found
          */
-        default @Nullable ShaderProgram getShader(ResourceLocation name) {
+        default @Nullable ShaderProgram getShader(Identifier name) {
             return VeilRenderSystem.renderer().getShaderManager().getShader(name);
         }
     }

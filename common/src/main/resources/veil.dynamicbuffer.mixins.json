@@ -5,11 +5,10 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "foundry.veil.VeilMixinPluginImpl",
   "client": [
-    "accessor.DynamicBufferGameRendererAccessor",
     "accessor.DynamicBufferProgramAccessor",
-    "client.DynamicBufferGameRendererMixin",
+    "client.DynamicBufferGlCommandEncoderMixin",
     "client.DynamicBufferLevelRendererMixin",
-    "client.DynamicBufferShaderInstanceMixin"
+    "client.DynamicBufferRenderTypeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

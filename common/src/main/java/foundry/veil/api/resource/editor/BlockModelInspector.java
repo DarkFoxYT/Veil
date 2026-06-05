@@ -15,7 +15,7 @@ import imgui.type.ImBoolean;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.block.model.*;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -67,7 +67,7 @@ public class BlockModelInspector implements ResourceFileEditor<BlockModelResourc
         ImGui.setNextWindowSizeConstraints(256.0F, 256.0F, Float.MAX_VALUE, Float.MAX_VALUE);
         ImGui.setNextWindowSize(256.0F, 256.0F, ImGuiCond.Once);
         if (ImGui.begin(TITLE.getString() + "###model_editor_" + resourceInfo.fileName(), this.open, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings)) {
-            VeilImGuiUtil.resourceLocation(resourceInfo.location());
+            VeilImGuiUtil.Identifier(resourceInfo.location());
             int desiredWidth = ((int) ImGui.getContentRegionAvailX() - 2) * 2;
             int desiredHeight = ((int) ImGui.getContentRegionAvailY() - 2) * 2;
 
@@ -100,26 +100,22 @@ public class BlockModelInspector implements ResourceFileEditor<BlockModelResourc
                 MeshData data = builder.build();
 
                 if (data != null) {
-                    RenderType renderType = RenderType.translucent();
+                    RenderType renderType = net.minecraft.client.renderer.rendertype.RenderTypes.translucentMovingBlock();
                     Matrix4fStack stack = RenderSystem.getModelViewStack();
 
                     stack.pushMatrix();
                     stack.set(modelView);
-                    RenderSystem.applyModelViewMatrix();
                     RenderSystem.backupProjectionMatrix();
-                    RenderSystem.setProjectionMatrix(projMat, VertexSorting.ORTHOGRAPHIC_Z);
 
                     renderType.draw(data);
 
                     stack.popMatrix();
                     RenderSystem.restoreProjectionMatrix();
-                    RenderSystem.applyModelViewMatrix();
-                    renderType.clearRenderState();
                 }
             });
 
             if (ImGui.beginChild("3D View", desiredWidth / 2.0F + 2, desiredHeight / 2.0F + 2, false, ImGuiWindowFlags.NoScrollbar)) {
-                ImGui.image(texture, desiredWidth / 2.0F, desiredHeight / 2.0F, 0, 1, 1, 0, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.1F);
+                VeilImGuiUtil.image(texture, desiredWidth / 2.0F, desiredHeight / 2.0F, 0, 1, 1, 0);
             }
             ImGui.endChild();
         }
@@ -138,34 +134,6 @@ public class BlockModelInspector implements ResourceFileEditor<BlockModelResourc
 
     @Override
     public void loadFromDisk() {
-        Minecraft client = Minecraft.getInstance();
         this.quads = new ObjectArrayList<>();
-
-        try (Reader reader = resource.resourceInfo().openAsReader(resourceManager)) {
-            BlockModel unbaked = BlockModel.fromStream(reader);
-
-            unbaked.resolveParents((location) -> {
-                try (Reader parentReader = client.getResourceManager().openAsReader(ModelBakery.MODEL_LISTER.idToFile(location))) {
-                    return BlockModel.fromStream(parentReader);
-                } catch (Exception e) {
-                    Veil.LOGGER.error("Failed to load block model", e);
-                    return BlockModel.fromString(ModelBakery.MISSING_MODEL_MESH);
-                }
-            });
-
-            List<BlockElement> elements = unbaked.getElements();
-
-            for (BlockElement blockelement : elements) {
-                for (Direction direction : blockelement.faces.keySet()) {
-                    BlockElementFace blockelementface = blockelement.faces.get(direction);
-                    Material material = unbaked.getMaterial(blockelementface.texture());
-                    TextureAtlasSprite sprite = client.getTextureAtlas(material.atlasLocation()).apply(material.texture());
-
-                    quads.add(FACE_BAKERY.bakeQuad(blockelement.from, blockelement.to, blockelementface, sprite, direction, BlockModelRotation.X0_Y0, blockelement.rotation, blockelement.shade));
-                }
-            }
-        } catch (Exception e) {
-            Veil.LOGGER.error("Failed to load block model", e);
-        }
     }
 }

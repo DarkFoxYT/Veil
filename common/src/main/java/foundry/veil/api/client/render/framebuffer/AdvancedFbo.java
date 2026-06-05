@@ -1,7 +1,7 @@
 package foundry.veil.api.client.render.framebuffer;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.texture.TextureFilter;
@@ -53,6 +53,13 @@ public interface AdvancedFbo extends NativeResource {
      */
     default void clear(int clearMask) {
         this.clear(0.0F, 0.0F, 0.0F, 0.0F, 1.0F, clearMask, this.getDrawBuffers());
+    }
+
+    /**
+     * Clears only the depth attachment in this framebuffer.
+     */
+    default void clearDepth() {
+        this.clear(GL_DEPTH_BUFFER_BIT);
     }
 
     /**
@@ -144,7 +151,7 @@ public interface AdvancedFbo extends NativeResource {
      * Binds this framebuffer for read requests.
      */
     default void bindRead() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         GlStateManager._glBindFramebuffer(GL_READ_FRAMEBUFFER, this.getId());
     }
 
@@ -169,7 +176,7 @@ public interface AdvancedFbo extends NativeResource {
     static void unbind() {
         RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
         if (mainTarget != null) {
-            mainTarget.bindWrite(true);
+            VeilRenderSystem.bind(mainTarget, true);
             return;
         }
 

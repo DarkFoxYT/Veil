@@ -4,7 +4,7 @@ import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.post.PostPipeline;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
 import foundry.veil.api.client.render.shader.uniform.ShaderUniform;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -14,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class FramebufferPostStage implements PostPipeline {
 
-    private final ResourceLocation in;
-    private final ResourceLocation out;
+    private final Identifier in;
+    private final Identifier out;
     private final boolean clear;
 
     /**
@@ -26,7 +26,7 @@ public abstract class FramebufferPostStage implements PostPipeline {
      * @param out   The framebuffer to write into
      * @param clear Whether to clear the output before drawing
      */
-    public FramebufferPostStage(@Nullable ResourceLocation in, ResourceLocation out, boolean clear) {
+    public FramebufferPostStage(@Nullable Identifier in, Identifier out, boolean clear) {
         this.in = in;
         this.out = out;
         this.clear = clear;
@@ -39,12 +39,10 @@ public abstract class FramebufferPostStage implements PostPipeline {
      * @param shader  The shader to set input samplers to
      */
     protected void setupFramebuffer(Context context, ShaderProgram shader) {
-        AdvancedFbo in = this.in != null ? context.getFramebuffer(this.in) : null;
+        AdvancedFbo in = this.in != null ? context.getFramebuffer(this.in) : context.getDrawFramebuffer();
         AdvancedFbo out = context.getFramebufferOrDraw(this.out);
 
-        if (in != null) {
-            shader.setFramebufferSamplers(in);
-        }
+        shader.setFramebufferSamplers(in);
 
         out.bind(true);
         if (this.clear) {
@@ -69,14 +67,14 @@ public abstract class FramebufferPostStage implements PostPipeline {
     /**
      * @return The framebuffer to read from
      */
-    public @Nullable ResourceLocation getIn() {
+    public @Nullable Identifier getIn() {
         return this.in;
     }
 
     /**
      * @return The framebuffer to write into
      */
-    public ResourceLocation getOut() {
+    public Identifier getOut() {
         return this.out;
     }
 

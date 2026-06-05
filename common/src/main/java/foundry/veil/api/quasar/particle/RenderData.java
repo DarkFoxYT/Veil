@@ -8,9 +8,9 @@ import foundry.veil.api.quasar.data.QuasarParticleData;
 import foundry.veil.api.quasar.fx.Trail;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
@@ -24,7 +24,7 @@ import java.util.List;
 public final class RenderData {
 
     @Deprecated
-    public static final ResourceLocation BLANK = Veil.veilPath("textures/special/blank.png");
+    public static final Identifier BLANK = Veil.veilPath("textures/special/blank.png");
 
     private final QuasarParticle particle;
     private final Vector3d prevPosition;

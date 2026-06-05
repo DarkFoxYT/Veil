@@ -12,7 +12,7 @@ import io.github.ocelot.glslprocessor.api.GlslParser;
 import io.github.ocelot.glslprocessor.api.GlslSyntaxException;
 import io.github.ocelot.glslprocessor.api.node.GlslTree;
 import io.github.ocelot.glslprocessor.lib.anarres.cpp.LexerException;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +42,7 @@ public class VanillaShaderProcessor {
         PROCESSOR.remove();
     }
 
-    public static String modify(Map<String, Object> customProgramData, @Nullable String shaderInstance, @Nullable ResourceLocation name, @Nullable VertexFormat vertexFormat, int activeBuffers, int type, String source, GLCapabilities glCapabilities) throws IOException, GlslSyntaxException, LexerException {
+    public static String modify(Map<String, Object> customProgramData, @Nullable String shaderInstance, @Nullable Identifier name, @Nullable VertexFormat vertexFormat, int activeBuffers, int type, String source, GLCapabilities glCapabilities) throws IOException, GlslSyntaxException, LexerException {
         ShaderProcessorList processor = PROCESSOR.get();
         if (processor == null) {
             throw new NullPointerException("Processor not initialized");
@@ -62,7 +62,7 @@ public class VanillaShaderProcessor {
     private record Context(Map<String, Object> customProgramData,
                            ShaderProcessorList processor,
                            String shaderInstance,
-                           ResourceLocation name,
+                           Identifier name,
                            int activeBuffers,
                            int type,
                            GLCapabilities glCapabilities,
@@ -70,14 +70,14 @@ public class VanillaShaderProcessor {
                            Map<String, String> macros) implements ShaderPreProcessor.MinecraftContext {
 
         @Override
-        public GlslTree modifyInclude(@Nullable ResourceLocation name, String source) throws IOException, GlslSyntaxException, LexerException {
+        public GlslTree modifyInclude(@Nullable Identifier name, String source) throws IOException, GlslSyntaxException, LexerException {
             GlslTree tree = GlslParser.preprocessParse(source, this.macros);
             this.processor.getImportProcessor().modify(new Context(this.customProgramData, this.processor, this.shaderInstance, name, this.activeBuffers, this.type, this.glCapabilities, this.vertexFormat, this.macros), tree);
             return tree;
         }
 
         @Override
-        public @Nullable ResourceLocation name() {
+        public @Nullable Identifier name() {
             return this.name;
         }
 

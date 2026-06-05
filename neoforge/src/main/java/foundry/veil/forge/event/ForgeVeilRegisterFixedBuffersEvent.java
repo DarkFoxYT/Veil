@@ -3,7 +3,7 @@ package foundry.veil.forge.event;
 import foundry.veil.api.event.VeilRegisterFixedBuffersEvent;
 import foundry.veil.api.event.VeilRenderLevelStageEvent;
 import foundry.veil.platform.VeilEventPlatform;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.neoforged.bus.api.Event;
 import net.neoforged.fml.event.IModBusEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -20,9 +20,9 @@ import java.util.function.BiConsumer;
  */
 public class ForgeVeilRegisterFixedBuffersEvent extends Event implements IModBusEvent {
 
-    private final BiConsumer<RenderLevelStageEvent.Stage, RenderType> registry;
+    private final BiConsumer<Class<? extends RenderLevelStageEvent>, RenderType> registry;
 
-    public ForgeVeilRegisterFixedBuffersEvent(BiConsumer<RenderLevelStageEvent.Stage, RenderType> registry) {
+    public ForgeVeilRegisterFixedBuffersEvent(BiConsumer<Class<? extends RenderLevelStageEvent>, RenderType> registry) {
         this.registry = registry;
     }
 
@@ -32,7 +32,7 @@ public class ForgeVeilRegisterFixedBuffersEvent extends Event implements IModBus
      * @param stage      The stage the buffer should be finished after or <code>null</code> to do it manually
      * @param renderType The render operand to finish
      */
-    public void register(@Nullable RenderLevelStageEvent.Stage stage, RenderType renderType) {
+    public void register(@Nullable Class<? extends RenderLevelStageEvent> stage, RenderType renderType) {
         this.registry.accept(stage, renderType);
     }
 }

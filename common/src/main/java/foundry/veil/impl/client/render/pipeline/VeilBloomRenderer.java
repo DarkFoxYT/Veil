@@ -9,7 +9,8 @@ import foundry.veil.api.client.render.framebuffer.VeilFramebuffers;
 import foundry.veil.api.client.render.post.PostPipeline;
 import foundry.veil.api.compat.IrisCompat;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +20,7 @@ import static org.lwjgl.opengl.GL11C.GL_COLOR_BUFFER_BIT;
 @ApiStatus.Internal
 public final class VeilBloomRenderer {
 
-    private static final ResourceLocation BLOOM_PIPELINE = Veil.veilPath("core/bloom");
+    private static final Identifier BLOOM_PIPELINE = Veil.veilPath("core/bloom");
 
     private static boolean enabled;
     private static boolean rendered;
@@ -104,7 +105,7 @@ public final class VeilBloomRenderer {
             return;
         }
 
-        ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
+        ProfilerFiller profiler = Profiler.get();
         profiler.push("bloom");
 
         FramebufferStack.push(null);

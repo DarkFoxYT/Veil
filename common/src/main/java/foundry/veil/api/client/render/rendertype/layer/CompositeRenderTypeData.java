@@ -4,11 +4,11 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import foundry.veil.api.client.render.VeilRenderBridge;
 import foundry.veil.api.client.render.rendertype.VeilRenderType;
 import foundry.veil.api.client.render.rendertype.VeilRenderTypeBuilder;
+import foundry.veil.impl.client.render.pipeline.VeilRenderTypeBuilderImpl;
 import foundry.veil.api.client.util.VertexFormatCodec;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
@@ -53,13 +53,12 @@ public record CompositeRenderTypeData(VertexFormat format, VertexFormat.Mode mod
         for (int i = 0; i < this.layers.size(); i++) {
             RenderTypeLayer[] shards = this.layers.get(i);
 
-            VeilRenderTypeBuilder builder = VeilRenderBridge.create(RenderType.CompositeState.builder());
+            VeilRenderTypeBuilder builder = new VeilRenderTypeBuilderImpl();
             for (RenderTypeLayer shard : shards) {
                 shard.addShard(builder, params);
             }
 
-            RenderType.CompositeState state = builder.create(this.outline);
-            renderTypes[i] = RenderType.create(name, this.format, this.mode, this.bufferSize, this.affectsCrumbling, this.sort, state);
+            renderTypes[i] = builder.create(name, this.format, this.mode, this.bufferSize, this.affectsCrumbling, this.sort, this.outline);
         }
         return VeilRenderType.layered(renderTypes);
     }

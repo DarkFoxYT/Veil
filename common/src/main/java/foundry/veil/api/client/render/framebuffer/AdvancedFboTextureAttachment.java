@@ -1,5 +1,6 @@
 package foundry.veil.api.client.render.framebuffer;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.ext.VeilDebug;
@@ -35,6 +36,9 @@ public class AdvancedFboTextureAttachment extends AbstractTexture implements Adv
     private final int mipmapLevels;
     private final TextureFilter filter;
     private final String name;
+    private int id = -1;
+    private boolean blur;
+    private boolean mipmap;
 
     /**
      * Creates a new attachment that adds a texture.
@@ -65,9 +69,8 @@ public class AdvancedFboTextureAttachment extends AbstractTexture implements Adv
         this.name = name;
     }
 
-    @Override
     public void setFilter(boolean blur, boolean mipmap) {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         this.blur = blur;
         this.mipmap = mipmap;
         int minFilter;
@@ -136,9 +139,8 @@ public class AdvancedFboTextureAttachment extends AbstractTexture implements Adv
         }
     }
 
-    @Override
     public int getId() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         if (this.id == -1) {
             this.id = VeilRenderSystem.createTextures(GL_TEXTURE_2D);
         }
@@ -180,7 +182,7 @@ public class AdvancedFboTextureAttachment extends AbstractTexture implements Adv
 
     @Override
     public void unbindAttachment() {
-        VeilRenderSystem.renderThreadExecutor().execute(() -> RenderSystem.bindTexture(0));
+        VeilRenderSystem.renderThreadExecutor().execute(() -> GlStateManager._bindTexture(0));
     }
 
     @Override
@@ -225,7 +227,17 @@ public class AdvancedFboTextureAttachment extends AbstractTexture implements Adv
         this.releaseId();
     }
 
-    @Override
+    public void bind() {
+        GlStateManager._bindTexture(this.getId());
+    }
+
+    public void releaseId() {
+        if (this.id != -1) {
+            GlStateManager._deleteTexture(this.id);
+            this.id = -1;
+        }
+    }
+
     public void load(ResourceManager manager) {
     }
 }

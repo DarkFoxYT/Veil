@@ -2,7 +2,7 @@ package foundry.veil.forge.event;
 
 import foundry.veil.api.client.render.post.PostPipeline;
 import foundry.veil.api.client.render.post.PostProcessingManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.Event;
 
 /**
@@ -15,11 +15,11 @@ import net.neoforged.bus.api.Event;
  */
 public class ForgeVeilPostProcessingEvent extends Event {
 
-    private final ResourceLocation name;
+    private final Identifier name;
     private final PostPipeline pipeline;
     private final PostPipeline.Context context;
 
-    public ForgeVeilPostProcessingEvent(ResourceLocation name, PostPipeline pipeline, PostPipeline.Context context) {
+    public ForgeVeilPostProcessingEvent(Identifier name, PostPipeline pipeline, PostPipeline.Context context) {
         this.name = name;
         this.pipeline = pipeline;
         this.context = context;
@@ -28,7 +28,7 @@ public class ForgeVeilPostProcessingEvent extends Event {
     /**
      * @return The name of the pipeline running
      */
-    public ResourceLocation getName() {
+    public Identifier getName() {
         return this.name;
     }
 
@@ -53,7 +53,7 @@ public class ForgeVeilPostProcessingEvent extends Event {
      */
     public static class Pre extends ForgeVeilPostProcessingEvent {
 
-        public Pre(ResourceLocation name, PostPipeline pipeline, PostPipeline.Context context) {
+        public Pre(Identifier name, PostPipeline pipeline, PostPipeline.Context context) {
             super(name, pipeline, context);
         }
     }
@@ -65,7 +65,7 @@ public class ForgeVeilPostProcessingEvent extends Event {
      */
     public static class Post extends ForgeVeilPostProcessingEvent {
 
-        public Post(ResourceLocation name, PostPipeline pipeline, PostPipeline.Context context) {
+        public Post(Identifier name, PostPipeline pipeline, PostPipeline.Context context) {
             super(name, pipeline, context);
         }
     }

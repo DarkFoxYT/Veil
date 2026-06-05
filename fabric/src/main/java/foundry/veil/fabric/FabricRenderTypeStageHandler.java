@@ -17,7 +17,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.phys.Vec3;
@@ -56,7 +56,7 @@ public class FabricRenderTypeStageHandler {
             stages.forEach(renderType -> {
                 profiler.push("render_" + VeilRenderType.getName(renderType));
                 if (CUSTOM_BLOCK_LAYERS.contains(renderType)) {
-                    Vec3 pos = camera.getPosition();
+                    Vec3 pos = camera.position();
                     extension.veil$drawBlockLayer(renderType, pos.x, pos.y, pos.z, frustumMatrix, projectionMatrix);
                 }
                 bufferSource.endBatch(renderType);

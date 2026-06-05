@@ -4,7 +4,7 @@ import foundry.veil.Veil;
 import foundry.veil.impl.client.render.shader.modifier.*;
 import io.github.ocelot.glslprocessor.api.node.GlslTree;
 import net.minecraft.resources.FileToIdConverter;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceProvider;
@@ -34,8 +34,8 @@ public class ShaderModificationManager extends SimplePreparableReloadListener<Sh
     );
     private static final Pattern OUT_PATTERN = Pattern.compile("out ");
 
-    private Map<ResourceLocation, List<ShaderModification>> shaders;
-    private Map<ShaderModification, ResourceLocation> names;
+    private Map<Identifier, List<ShaderModification>> shaders;
+    private Map<ShaderModification, Identifier> names;
 
     public ShaderModificationManager() {
         this.shaders = Collections.emptyMap();
@@ -50,7 +50,7 @@ public class ShaderModificationManager extends SimplePreparableReloadListener<Sh
      * @param flags    Additional flags for applying modifiers
      * @see ShaderModification
      */
-    public void applyModifiers(ResourceLocation shaderId, GlslTree tree, int flags) {
+    public void applyModifiers(Identifier shaderId, GlslTree tree, int flags) {
         Collection<ShaderModification> modifiers = this.getModifiers(shaderId);
         if (modifiers.isEmpty()) {
             return;
@@ -72,7 +72,7 @@ public class ShaderModificationManager extends SimplePreparableReloadListener<Sh
      * @param shaderId The shader to get all modifiers for
      * @return The modifiers applied to the specified shader
      */
-    public List<ShaderModification> getModifiers(ResourceLocation shaderId) {
+    public List<ShaderModification> getModifiers(Identifier shaderId) {
         return this.shaders.getOrDefault(shaderId, Collections.emptyList());
     }
 
@@ -82,18 +82,18 @@ public class ShaderModificationManager extends SimplePreparableReloadListener<Sh
      * @param modification The modification to get the id of
      * @return The id of that modification or <code>null</code> if unregistered
      */
-    public @Nullable ResourceLocation getModifierId(ShaderModification modification) {
+    public @Nullable Identifier getModifierId(ShaderModification modification) {
         return this.names.get(modification);
     }
 
-    private @Nullable ResourceLocation getNextStage(ResourceLocation shader, ResourceProvider resourceProvider) {
+    private @Nullable Identifier getNextStage(Identifier shader, ResourceProvider resourceProvider) {
         String[] parts = shader.getPath().split("\\.");
         String extension = parts[parts.length - 1].toLowerCase(Locale.ROOT);
 
         while (extension != null) {
             extension = NEXT_STAGES.get(extension);
 
-            ResourceLocation nextShader = ResourceLocation.fromNamespaceAndPath(shader.getNamespace(), shader.getPath().substring(0, shader.getPath().length() - 3) + extension);
+            Identifier nextShader = Identifier.fromNamespaceAndPath(shader.getNamespace(), shader.getPath().substring(0, shader.getPath().length() - 3) + extension);
             if (resourceProvider.getResource(nextShader).isPresent()) {
                 return nextShader;
             }
@@ -103,12 +103,12 @@ public class ShaderModificationManager extends SimplePreparableReloadListener<Sh
 
     @Override
     protected @NotNull Preparations prepare(@NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profilerFiller) {
-        Map<ResourceLocation, List<ShaderModification>> modifiers = new HashMap<>();
-        Map<ShaderModification, ResourceLocation> names = new HashMap<>();
+        Map<Identifier, List<ShaderModification>> modifiers = new HashMap<>();
+        Map<ShaderModification, Identifier> names = new HashMap<>();
 
-        for (Map.Entry<ResourceLocation, Resource> entry : MODIFIER_LISTER.listMatchingResources(resourceManager).entrySet()) {
-            ResourceLocation file = entry.getKey();
-            ResourceLocation id = MODIFIER_LISTER.fileToId(file);
+        for (Map.Entry<Identifier, Resource> entry : MODIFIER_LISTER.listMatchingResources(resourceManager).entrySet()) {
+            Identifier file = entry.getKey();
+            Identifier id = MODIFIER_LISTER.fileToId(file);
 
             try {
                 String[] parts = id.getPath().split("/", 2);
@@ -117,7 +117,7 @@ public class ShaderModificationManager extends SimplePreparableReloadListener<Sh
                     continue;
                 }
 
-                ResourceLocation shaderId = ResourceLocation.fromNamespaceAndPath(parts[0], parts[1]);
+                Identifier shaderId = Identifier.fromNamespaceAndPath(parts[0], parts[1]);
                 try (Reader reader = entry.getValue().openAsReader()) {
                     ShaderModification modification = ShaderModification.parse(IOUtils.toString(reader), shaderId.getPath().endsWith(".vsh"));
                     List<ShaderModification> modifications = modifiers.computeIfAbsent(shaderId, name -> new LinkedList<>());
@@ -137,8 +137,8 @@ public class ShaderModificationManager extends SimplePreparableReloadListener<Sh
         }
 
         // Inject inputs to next shader stage
-        for (Map.Entry<ResourceLocation, List<ShaderModification>> entry : new HashMap<>(modifiers).entrySet()) {
-            ResourceLocation nextStage = null;
+        for (Map.Entry<Identifier, List<ShaderModification>> entry : new HashMap<>(modifiers).entrySet()) {
+            Identifier nextStage = null;
 
             for (ShaderModification modification : entry.getValue()) {
                 if (!(modification instanceof SimpleShaderModification simpleMod)) {
@@ -176,7 +176,7 @@ public class ShaderModificationManager extends SimplePreparableReloadListener<Sh
     }
 
     @ApiStatus.Internal
-    public record Preparations(Map<ResourceLocation, List<ShaderModification>> shaders,
-                               Map<ShaderModification, ResourceLocation> names) {
+    public record Preparations(Map<Identifier, List<ShaderModification>> shaders,
+                               Map<ShaderModification, Identifier> names) {
     }
 }

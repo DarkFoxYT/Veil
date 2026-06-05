@@ -9,10 +9,10 @@ import foundry.veil.ext.ShaderInstanceExtension;
 import foundry.veil.impl.ThreadTaskScheduler;
 import foundry.veil.impl.client.render.shader.processor.VanillaShaderProcessor;
 import foundry.veil.impl.client.render.shader.program.ShaderProgramImpl;
-import net.minecraft.FileUtil;
+import net.minecraft.util.FileUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -43,32 +43,32 @@ public class VanillaShaderCompiler {
 
     private void compileShader(ShaderInstance shader, int activeBuffers, GLCapabilities glCapabilities) {
         ShaderInstanceExtension extension = (ShaderInstanceExtension) shader;
-        Collection<ResourceLocation> shaderSources = extension.veil$getShaderSources();
+        Collection<Identifier> shaderSources = extension.veil$getShaderSources();
         VertexFormat vertexFormat = shader.getVertexFormat();
         Map<String, Object> customProgramData = new HashMap<>();
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
 
         VanillaShaderProcessor.setup(resourceManager);
-        for (ResourceLocation path : shaderSources) {
+        for (Identifier path : shaderSources) {
             try (Reader reader = resourceManager.openAsReader(path)) {
                 String source = IOUtils.toString(reader);
                 GlslPreprocessor preprocessor = new GlslPreprocessor() {
-                    private final Set<ResourceLocation> importedPaths = new HashSet<>();
+                    private final Set<Identifier> importedPaths = new HashSet<>();
 
                     @Override
                     public String applyImport(boolean useFullPath, @NotNull String directory) {
-                        ResourceLocation loc = ResourceLocation.parse(directory);
+                        Identifier loc = Identifier.parse(directory);
                         String normalised = FileUtil.normalizeResourcePath((useFullPath ? path : "shaders/include/") + loc.getPath());
-                        ResourceLocation resourcelocation = ResourceLocation.fromNamespaceAndPath(loc.getNamespace(), normalised);
+                        Identifier identifier = Identifier.fromNamespaceAndPath(loc.getNamespace(), normalised);
 
-                        if (!this.importedPaths.add(resourcelocation)) {
+                        if (!this.importedPaths.add(identifier)) {
                             return null;
                         }
 
-                        try (Reader reader = resourceManager.openAsReader(resourcelocation)) {
+                        try (Reader reader = resourceManager.openAsReader(identifier)) {
                             return IOUtils.toString(reader);
                         } catch (IOException e) {
-                            throw new RuntimeException("Could not open GLSL import " + resourcelocation, e);
+                            throw new RuntimeException("Could not open GLSL import " + identifier, e);
                         }
                     }
                 };

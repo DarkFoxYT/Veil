@@ -32,7 +32,7 @@ public final class QuasarParticles {
     public static final ResourceKey<Registry<EmitterShapeSettings>> EMITTER_SHAPE_SETTINGS = createRegistryKey("quasar/modules/emitter/shape");
     public static final ResourceKey<Registry<ParticleEmitterData>> EMITTER = createRegistryKey("quasar/emitters");
 
-    private static final SuggestionProvider<?> EMITTER_SUGGESTION_PROVIDER = (unused, builder) -> registryAccess().registry(EMITTER).map(registry -> SharedSuggestionProvider.suggestResource(registry.keySet(), builder)).orElseGet(Suggestions::empty);
+    private static final SuggestionProvider<?> EMITTER_SUGGESTION_PROVIDER = (unused, builder) -> registryAccess().lookup(EMITTER).map(registry -> SharedSuggestionProvider.suggestResource(registry.keySet(), builder)).orElseGet(Suggestions::empty);
     private static final List<RegistryDataLoader.RegistryData<?>> REGISTRIES = List.of(
             new RegistryDataLoader.RegistryData<>(INIT_MODULES, ParticleModuleData.INIT_DIRECT_CODEC, false),
             new RegistryDataLoader.RegistryData<>(UPDATE_MODULES, ParticleModuleData.UPDATE_DIRECT_CODEC, false),
@@ -69,7 +69,8 @@ public final class QuasarParticles {
     public static class Reloader implements PreparableReloadListener {
 
         @Override
-        public @NotNull CompletableFuture<Void> reload(PreparationBarrier preparationBarrier, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller preparationsProfiler, @NotNull ProfilerFiller reloadProfiler, @NotNull Executor backgroundExecutor, @NotNull Executor gameExecutor) {
+        public @NotNull CompletableFuture<Void> reload(@NotNull SharedState sharedState, @NotNull Executor backgroundExecutor, @NotNull PreparationBarrier preparationBarrier, @NotNull Executor gameExecutor) {
+            ResourceManager resourceManager = sharedState.resourceManager();
             return VeilDynamicRegistry.loadRegistries(resourceManager, REGISTRIES, backgroundExecutor)
                     .thenCompose(preparationBarrier::wait)
                     .thenAcceptAsync(data -> {
@@ -81,7 +82,7 @@ public final class QuasarParticles {
                             Veil.LOGGER.error("Quasar registry loading errors:{}", msg);
                         }
 
-                        Veil.LOGGER.info("Loaded {} quasar particles", registryAccess.registryOrThrow(EMITTER).size());
+                        Veil.LOGGER.info("Loaded {} quasar particles", registryAccess.lookupOrThrow(EMITTER).size());
                         VeilRenderSystem.renderer().getParticleManager().clear();
                     }, gameExecutor);
         }

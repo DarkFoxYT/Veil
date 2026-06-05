@@ -5,7 +5,7 @@ import foundry.veil.api.client.render.rendertype.VeilRenderType;
 import foundry.veil.fabric.FabricRenderTypeStageHandler;
 import foundry.veil.fabric.event.FabricVeilRegisterBlockLayersEvent;
 import net.minecraft.client.renderer.RenderBuffers;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

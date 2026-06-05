@@ -10,7 +10,7 @@ import foundry.veil.api.client.render.shader.texture.ShaderTextureSource;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.GsonHelper;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,16 +42,16 @@ import static org.lwjgl.opengl.GL43C.GL_COMPUTE_SHADER;
  * @param blendMode             The blend mode to use or <code>null</code> to use the current blend mode
  * @author Ocelot
  */
-public record ProgramDefinition(@Nullable ResourceLocation vertex,
-                                @Nullable ResourceLocation tesselationControl,
-                                @Nullable ResourceLocation tesselationEvaluation,
-                                @Nullable ResourceLocation geometry,
-                                @Nullable ResourceLocation fragment,
-                                @Nullable ResourceLocation compute,
+public record ProgramDefinition(@Nullable Identifier vertex,
+                                @Nullable Identifier tesselationControl,
+                                @Nullable Identifier tesselationEvaluation,
+                                @Nullable Identifier geometry,
+                                @Nullable Identifier fragment,
+                                @Nullable Identifier compute,
                                 String[] definitions,
                                 Map<String, String> definitionDefaults,
                                 Map<String, ShaderTextureSource> samplers,
-                                Int2ObjectMap<ResourceLocation> shaders,
+                                Int2ObjectMap<Identifier> shaders,
                                 ShaderFeature[] requiredFeatures,
                                 @Nullable ShaderBlendMode blendMode) {
 
@@ -79,13 +79,13 @@ public record ProgramDefinition(@Nullable ResourceLocation vertex,
      */
     public static class Deserializer implements JsonDeserializer<ProgramDefinition> {
 
-        private static @Nullable ResourceLocation deserializeSource(JsonObject json, String name, JsonDeserializationContext context) {
+        private static @Nullable Identifier deserializeSource(JsonObject json, String name, JsonDeserializationContext context) {
             JsonElement element = json.get(name);
             if (element == null) {
                 return null;
             }
 
-            return context.deserialize(element, ResourceLocation.class);
+            return context.deserialize(element, Identifier.class);
         }
 
         private String[] deserializeDefinitions(JsonArray json, Map<String, String> defaults) throws JsonParseException {
@@ -130,12 +130,12 @@ public record ProgramDefinition(@Nullable ResourceLocation vertex,
         @Override
         public ProgramDefinition deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
             JsonObject json = element.getAsJsonObject();
-            ResourceLocation vertex = deserializeSource(json, "vertex", context);
-            ResourceLocation tesselationControl = deserializeSource(json, "tesselation_control", context);
-            ResourceLocation tesselationEvaluation = deserializeSource(json, "tesselation_evaluation", context);
-            ResourceLocation geometry = deserializeSource(json, "geometry", context);
-            ResourceLocation fragment = deserializeSource(json, "fragment", context);
-            ResourceLocation compute = deserializeSource(json, "compute", context);
+            Identifier vertex = deserializeSource(json, "vertex", context);
+            Identifier tesselationControl = deserializeSource(json, "tesselation_control", context);
+            Identifier tesselationEvaluation = deserializeSource(json, "tesselation_evaluation", context);
+            Identifier geometry = deserializeSource(json, "geometry", context);
+            Identifier fragment = deserializeSource(json, "fragment", context);
+            Identifier compute = deserializeSource(json, "compute", context);
 
             String[] definitions;
             Map<String, String> definitionDefaults;
@@ -184,7 +184,7 @@ public record ProgramDefinition(@Nullable ResourceLocation vertex,
                 requiredFeatures = new HashSet<>();
             }
 
-            Int2ObjectMap<ResourceLocation> sources = new Int2ObjectArrayMap<>();
+            Int2ObjectMap<Identifier> sources = new Int2ObjectArrayMap<>();
             if (vertex != null) {
                 sources.put(GL_VERTEX_SHADER, vertex);
             }

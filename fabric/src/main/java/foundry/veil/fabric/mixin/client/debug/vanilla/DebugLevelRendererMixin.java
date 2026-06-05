@@ -3,7 +3,7 @@ package foundry.veil.fabric.mixin.client.debug.vanilla;
 import com.llamalad7.mixinextras.sugar.Local;
 import foundry.veil.api.client.render.rendertype.VeilRenderType;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

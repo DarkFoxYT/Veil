@@ -90,7 +90,7 @@ public class CameraMatrices {
         }
 
         // This moves the view bobbing from the projection matrix to the view matrix
-        this.viewMatrix.set(modelView).mulLocal(this.inverseProjectionMatrix.mul(RenderSystem.getProjectionMatrix(), new Matrix4f()));
+        this.viewMatrix.set(modelView).mulLocal(this.inverseProjectionMatrix.mul(projection, new Matrix4f()));
         this.viewMatrix.invert(this.inverseViewMatrix);
         this.inverseViewMatrix.normal(this.inverseViewRotMatrix);
 
@@ -110,7 +110,7 @@ public class CameraMatrices {
             return;
         }
 
-        this.projectionMatrix.set(RenderSystem.getProjectionMatrix());
+        this.projectionMatrix.identity();
         this.projectionMatrix.invertAffine(this.inverseProjectionMatrix);
 
         this.viewMatrix.identity();

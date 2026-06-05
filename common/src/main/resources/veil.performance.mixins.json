@@ -5,10 +5,6 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "foundry.veil.VeilMixinPluginImpl",
   "client": [
-    "client.PerformanceAbstractTextureMixin",
-    "client.PerformanceLevelRendererMixin",
-    "client.PerformanceRenderTargetMixin",
-    "client.PerformanceScreenEffectRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -17,7 +17,8 @@ import foundry.veil.impl.resource.VeilResourceManagerImpl;
 import foundry.veil.platform.VeilClientPlatform;
 import foundry.veil.platform.VeilEventPlatform;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ServiceLoader;
@@ -48,7 +49,7 @@ public class VeilClient {
         }
 
         // This fixes moving transparent blocks drawing too early
-        VeilEventPlatform.INSTANCE.onVeilRegisterFixedBuffers(registry -> registry.registerFixedBuffer(VeilRenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS, RenderType.translucentMovingBlock()));
+        VeilEventPlatform.INSTANCE.onVeilRegisterFixedBuffers(registry -> registry.registerFixedBuffer(VeilRenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS, RenderTypes.translucentMovingBlock()));
 
         RenderTypeShardRegistry.addGenericShard(renderType -> "main_target".equals(getOutputName(renderType)), new DynamicBufferShard(DynamicBufferManager.MAIN_WRAPPER, () -> Minecraft.getInstance().getMainRenderTarget()));
         RenderTypeShardRegistry.addGenericShard(renderType -> "translucent_target".equals(getOutputName(renderType)), new DynamicBufferShard("translucent", () -> Minecraft.getInstance().levelRenderer.getTranslucentTarget()));
@@ -69,7 +70,7 @@ public class VeilClient {
         PropertyModifierRegistry.bootstrap();
     }
 
-    private static String getOutputName(RenderType.CompositeRenderType renderType) {
+    private static String getOutputName(RenderType renderType) {
         return VeilRenderType.getName(VeilRenderType.getShards(renderType).outputState());
     }
 

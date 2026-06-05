@@ -8,7 +8,7 @@ import foundry.veil.api.quasar.data.QuasarParticleData;
 import foundry.veil.api.quasar.registry.RenderStyleRegistry;
 import foundry.veil.api.util.CodecUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix4f;
@@ -155,7 +155,7 @@ public interface RenderStyle {
             Matrix4f matrix4f = matrixStack.position();
             Vector3fc rotation = renderData.getRenderRotation();
 
-            Quaternionf faceCameraRotation = Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation();
+            Quaternionf faceCameraRotation = new Quaternionf(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
             SpriteData spriteData = renderData.getSpriteData();
 
             int red = (int) (renderData.getRed() * 255.0F) & 0xFF;

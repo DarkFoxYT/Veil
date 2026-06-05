@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
@@ -96,7 +96,7 @@ public class Line {
     private TilingMode tilingMode = TilingMode.STRETCH;
     private int frequency = 1;
     private float minDistance = 0f;
-    private ResourceLocation texture = null;
+    private Identifier texture = null;
     private CurveMode curveMode = CurveMode.NONE;
 
     public Line(Vec3[] points, int color, Function<Float, Float> widthFunction) {
@@ -117,7 +117,7 @@ public class Line {
         this.tilingMode = tilingMode;
     }
 
-    public void setTexture(ResourceLocation texture) {
+    public void setTexture(Identifier texture) {
         this.texture = texture;
     }
 
@@ -186,7 +186,7 @@ public class Line {
         return minDistance;
     }
 
-    public ResourceLocation getTexture() {
+    public Identifier getTexture() {
         return texture;
     }
 
@@ -215,7 +215,7 @@ public class Line {
 
     public void render(PoseStack stack, VertexConsumer consumer, int light) {
         stack.pushPose();
-        RenderSystem.disableCull();
+        com.mojang.blaze3d.opengl.GlStateManager._disableCull();
         Vec3[] curvePoints = setupCurvePoints();
         Vector3f[][] corners = new Vector3f[curvePoints.length][2];
         for (int i = 0; i < curvePoints.length; i++) {
@@ -223,7 +223,7 @@ public class Line {
             Vector3f topOffset = new Vector3f(0, (width / 2f), 0);
             Vector3f bottomOffset = new Vector3f(0, -(width / 2f), 0);
             if (billboard) {
-//                Vector3f cameraDirection = new Vector3f(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().subtract(curvePoints[i]).normalize());
+//                Vector3f cameraDirection = new Vector3f(Minecraft.getInstance().gameRenderer.getMainCamera().position().subtract(curvePoints[i]).normalize());
 //                Vector3f dirToNextPoint = new Vector3f(curvePoints[Math.min(i + frequency, curvePoints.length - 1)].subtract(curvePoints[i]).normalize());
 //                Vector3f axis = cameraDirection.copy();
 //                // invert the axis
@@ -240,7 +240,7 @@ public class Line {
             corners[i / frequency][1] = bottomOffset;
         }
         renderPoints(stack, consumer, light, corners, color);
-        RenderSystem.enableCull();
+        com.mojang.blaze3d.opengl.GlStateManager._enableCull();
         stack.popPose();
     }
 

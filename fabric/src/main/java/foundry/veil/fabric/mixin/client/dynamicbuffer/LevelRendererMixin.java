@@ -22,17 +22,17 @@ public abstract class LevelRendererMixin {
     @Unique
     private final DynamicBufferShard veil$particleBufferShard = new DynamicBufferShard("particles", this::getParticlesTarget);
 
-    @Inject(method = "renderLevel", at = @At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", args = "ldc=destroyProgress"))
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", args = "ldc=destroyProgress"), require = 0)
     public void beginTranslucent(CallbackInfo ci) {
         VeilRenderSystem.renderer().getDynamicBufferManger().setEnabled(true);
     }
 
-    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;F)V", shift = At.Shift.BEFORE))
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;extract(Lnet/minecraft/client/renderer/state/ParticlesRenderState;Lnet/minecraft/client/renderer/culling/Frustum;Lnet/minecraft/client/Camera;F)V", shift = At.Shift.BEFORE), require = 0)
     public void preRenderParticles(CallbackInfo ci) {
         this.veil$particleBufferShard.setupRenderState();
     }
 
-    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;F)V", shift = At.Shift.AFTER))
+    @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;extract(Lnet/minecraft/client/renderer/state/ParticlesRenderState;Lnet/minecraft/client/renderer/culling/Frustum;Lnet/minecraft/client/Camera;F)V", shift = At.Shift.AFTER), require = 0)
     public void postRenderParticles(CallbackInfo ci) {
         this.veil$particleBufferShard.clearRenderState();
     }

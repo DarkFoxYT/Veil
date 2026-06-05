@@ -3,7 +3,7 @@ package foundry.veil.impl.client.render.shader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +16,7 @@ public final class VeilVanillaShaders {
     private static ShaderInstance worldborder;
 
     public static void registerShaders(Context context) throws IOException {
-        context.register(ResourceLocation.withDefaultNamespace("worldborder"), DefaultVertexFormat.POSITION_TEX, value -> worldborder = value);
+        context.register(Identifier.withDefaultNamespace("worldborder"), DefaultVertexFormat.POSITION_TEX, value -> worldborder = value);
     }
 
     public static @Nullable ShaderInstance getWorldborder() {
@@ -33,6 +33,6 @@ public final class VeilVanillaShaders {
     @FunctionalInterface
     public interface Context {
 
-        void register(ResourceLocation id, VertexFormat vertexFormat, Consumer<ShaderInstance> loadCallback) throws IOException;
+        void register(Identifier id, VertexFormat vertexFormat, Consumer<ShaderInstance> loadCallback) throws IOException;
     }
 }

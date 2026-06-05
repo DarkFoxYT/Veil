@@ -5,7 +5,7 @@ import foundry.veil.api.client.render.light.DDALightData;
 import foundry.veil.api.client.render.light.data.LightData;
 import foundry.veil.api.client.render.shader.program.TextureUniformAccess;
 import foundry.veil.api.client.render.shader.program.UniformAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.joml.Vector3fc;
 
 import static org.lwjgl.opengl.GL12.GL_TEXTURE_3D;
@@ -39,7 +39,7 @@ public interface DDALightRenderer<T extends LightData & DDALightData> extends Li
         return false;
     }
 
-    static void uploadVoxelGridUniforms(ResourceLocation shaderId, int voxelGridTexture, Vector3fc gridOrigin) {
+    static void uploadVoxelGridUniforms(Identifier shaderId, int voxelGridTexture, Vector3fc gridOrigin) {
         uploadVoxelGridUniforms(VeilRenderSystem.renderer().getShaderManager().getShader(shaderId), voxelGridTexture, gridOrigin);
     }
 

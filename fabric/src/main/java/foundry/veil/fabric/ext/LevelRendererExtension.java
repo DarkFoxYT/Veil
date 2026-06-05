@@ -1,6 +1,7 @@
 package foundry.veil.fabric.ext;
 
-import net.minecraft.client.renderer.RenderType;
+import foundry.veil.api.event.VeilRenderLevelStageEvent;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.jetbrains.annotations.ApiStatus;
 import org.joml.Matrix4fc;
 
@@ -8,4 +9,6 @@ import org.joml.Matrix4fc;
 public interface LevelRendererExtension {
 
     void veil$renderStage(RenderType layer, Matrix4fc frustumMatrix, Matrix4fc projection);
+
+    void veil$renderStage(VeilRenderLevelStageEvent.Stage stage, Matrix4fc frustumMatrix, Matrix4fc projection);
 }

@@ -17,11 +17,14 @@ import foundry.veil.impl.client.imgui.VeilImGuiCompat;
 import foundry.veil.impl.network.VeilClientServerFlags;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.commands.arguments.coordinates.WorldCoordinates;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -48,14 +51,14 @@ public class VeilForgeClientEvents {
 
     @SubscribeEvent
     public static void keyPressed(InputEvent.Key event) {
-        if (Veil.IMGUIMC && event.getAction() == GLFW_PRESS && VeilImGuiCompat.EDITOR_KEY.matches(event.getKey(), event.getScanCode())) {
+        if (Veil.IMGUIMC && event.getAction() == GLFW_PRESS && VeilImGuiCompat.EDITOR_KEY.matches(new KeyEvent(event.getKey(), event.getScanCode(), event.getModifiers()))) {
             VeilRenderSystem.renderer().getEditorManager().toggle();
         }
     }
 
     @SubscribeEvent
     public static void mousePressed(InputEvent.MouseButton.Pre event) {
-        if (Veil.IMGUIMC && event.getAction() == GLFW_PRESS && VeilImGuiCompat.EDITOR_KEY.matchesMouse(event.getButton())) {
+        if (Veil.IMGUIMC && event.getAction() == GLFW_PRESS && VeilImGuiCompat.EDITOR_KEY.matchesMouse(new MouseButtonEvent(0, 0, new MouseButtonInfo(event.getButton(), event.getModifiers())))) {
             VeilRenderSystem.renderer().getEditorManager().toggle();
         }
     }
@@ -64,8 +67,8 @@ public class VeilForgeClientEvents {
     public static void registerClientCommands(RegisterClientCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> quasarBuilder = Commands.literal("quasar");
-        quasarBuilder.then(Commands.argument("emitter", ResourceLocationArgument.id()).suggests(QuasarParticles.emitterSuggestionProvider()).then(Commands.argument("position", Vec3Argument.vec3()).executes(ctx -> {
-            ResourceLocation id = ResourceLocationArgument.getId(ctx, "emitter");
+        quasarBuilder.then(Commands.argument("emitter", IdentifierArgument.id()).suggests(QuasarParticles.emitterSuggestionProvider()).then(Commands.argument("position", Vec3Argument.vec3()).executes(ctx -> {
+            Identifier id = IdentifierArgument.getId(ctx, "emitter");
 
             CommandSourceStack source = ctx.getSource();
             ParticleSystemManager particleManager = VeilRenderSystem.renderer().getParticleManager();
@@ -85,7 +88,7 @@ public class VeilForgeClientEvents {
         dispatcher.register(quasarBuilder);
 
         if (Veil.platform().isDevelopmentEnvironment()) {
-            ResourceLocation bufferId = Veil.veilPath("forced");
+            Identifier bufferId = Veil.veilPath("forced");
             LiteralArgumentBuilder<CommandSourceStack> debugBuilder = Commands.literal("veilc");
             debugBuilder.then(Commands.literal("buffers")
                     .then(Commands.literal("enable")

@@ -2,15 +2,15 @@ package foundry.veil.impl.client.render.pipeline;
 
 import foundry.veil.api.client.render.VeilRenderSystem;
 import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
 public class ShaderProgramShard extends RenderStateShard.ShaderStateShard {
 
-    private final ResourceLocation shader;
+    private final Identifier shader;
 
-    public ShaderProgramShard(ResourceLocation shader) {
+    public ShaderProgramShard(Identifier shader) {
         this.shader = shader;
     }
 
@@ -24,7 +24,7 @@ public class ShaderProgramShard extends RenderStateShard.ShaderStateShard {
         return this.name + "[" + this.shader + "]";
     }
 
-    public ResourceLocation getShader() {
+    public Identifier getShader() {
         return this.shader;
     }
 }

@@ -5,8 +5,8 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -16,19 +16,19 @@ import org.joml.Vector4f;
 import java.util.List;
 
 public class AnchorPoint {
-    public static AnchorPoint TEST_POINT = new AnchorPoint(ResourceLocation.fromNamespaceAndPath("quasar", "test_point"));
-    private final ResourceLocation id;
+    public static AnchorPoint TEST_POINT = new AnchorPoint(Identifier.fromNamespaceAndPath("quasar", "test_point"));
+    private final Identifier id;
     public Vector3f localOffset = new Vector3f(0, 0, 0);
     public Vector3f worldOffset = new Vector3f(0, 0, 0);
     public List<ModelPart> modelParts = null;
     public Vector3f origin = new Vector3f(0, 0, 0);
     public Vector4f transformMatrix = new Vector4f();
 
-    public AnchorPoint(ResourceLocation id) {
+    public AnchorPoint(Identifier id) {
         this.id = id;
     }
 
-    public ResourceLocation getId() {
+    public Identifier getId() {
         return id;
     }
 
@@ -64,9 +64,8 @@ public class AnchorPoint {
     public void render(PoseStack stack, MultiBufferSource source, float scalar) {
         stack.pushPose();
         stack.translate(transformMatrix.x(), transformMatrix.y(), transformMatrix.z());
-        VertexConsumer consumer = source.getBuffer(RenderType.lines());
+        VertexConsumer consumer = source.getBuffer(net.minecraft.client.renderer.rendertype.RenderTypes.lines());
         stack.scale(1 / 16f, 1 / 16f, 1 / 16f);
-        LevelRenderer.renderLineBox(stack, consumer, new AABB(-0.5, -0.5, -0.5, 0.5, 0.5, 0.5), 1, 1, 1, 1);
         stack.popPose();
     }
 }

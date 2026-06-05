@@ -10,7 +10,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2LongArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +25,7 @@ public class PostPipelineContext implements PostPipeline.Context {
 
     private final Object2LongMap<CharSequence> textures;
     private final Object2IntMap<CharSequence> samplers;
-    private final Map<ResourceLocation, AdvancedFbo> framebuffers;
+    private final Map<Identifier, AdvancedFbo> framebuffers;
 
     /**
      * Creates a new context to fit the specified window.
@@ -59,7 +59,7 @@ public class PostPipelineContext implements PostPipeline.Context {
     }
 
     @Override
-    public void setFramebuffer(ResourceLocation name, AdvancedFbo framebuffer) {
+    public void setFramebuffer(Identifier name, AdvancedFbo framebuffer) {
         this.framebuffers.put(name, framebuffer);
     }
 
@@ -82,7 +82,7 @@ public class PostPipelineContext implements PostPipeline.Context {
     }
 
     @Override
-    public @Nullable AdvancedFbo getFramebuffer(ResourceLocation name) {
+    public @Nullable AdvancedFbo getFramebuffer(Identifier name) {
         return this.framebuffers.get(name);
     }
 

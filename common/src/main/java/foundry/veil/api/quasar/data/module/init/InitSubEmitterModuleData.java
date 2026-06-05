@@ -9,11 +9,11 @@ import foundry.veil.api.quasar.emitters.module.InitParticleModule;
 import foundry.veil.api.quasar.particle.ParticleEmitter;
 import foundry.veil.api.quasar.particle.ParticleModuleSet;
 import foundry.veil.api.quasar.particle.ParticleSystemManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public record InitSubEmitterModuleData(ResourceLocation subEmitter) implements ParticleModuleData {
+public record InitSubEmitterModuleData(Identifier subEmitter) implements ParticleModuleData {
 
-    public static final MapCodec<InitSubEmitterModuleData> CODEC = ResourceLocation.CODEC.fieldOf("subemitter").xmap(InitSubEmitterModuleData::new, InitSubEmitterModuleData::subEmitter);
+    public static final MapCodec<InitSubEmitterModuleData> CODEC = Identifier.CODEC.fieldOf("subemitter").xmap(InitSubEmitterModuleData::new, InitSubEmitterModuleData::subEmitter);
 
     @Override
     public void addModules(ParticleModuleSet.Builder builder) {

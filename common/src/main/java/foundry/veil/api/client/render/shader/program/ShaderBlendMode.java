@@ -1,7 +1,10 @@
 package foundry.veil.api.client.render.shader.program;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
+
+
+import com.mojang.blaze3d.platform.DestFactor;
+import com.mojang.blaze3d.platform.SourceFactor;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import foundry.veil.api.util.EnumCodec;
@@ -14,37 +17,37 @@ import static org.lwjgl.opengl.GL20C.glBlendEquationSeparate;
  *
  * @param colorEquation  The color component equation. The default is {@link BlendEquation#ADD}
  * @param alphaEquation  The alpha component equation. The default is {@link BlendEquation#ADD}
- * @param srcColorFactor The source color factor. The default is {@link GlStateManager.SourceFactor#ONE}
- * @param dstColorFactor The destination color factor. The default is {@link GlStateManager.DestFactor#ONE}
- * @param srcAlphaFactor The source alpha factor. The default is {@link GlStateManager.SourceFactor#ONE}
- * @param dstAlphaFactor The destination alpha factor. The default is {@link GlStateManager.DestFactor#ONE}
+ * @param srcColorFactor The source color factor. The default is {@link SourceFactor#ONE}
+ * @param dstColorFactor The destination color factor. The default is {@link DestFactor#ONE}
+ * @param srcAlphaFactor The source alpha factor. The default is {@link SourceFactor#ONE}
+ * @param dstAlphaFactor The destination alpha factor. The default is {@link DestFactor#ONE}
  * @author Ocelot
  */
 public record ShaderBlendMode(
         BlendEquation colorEquation,
         BlendEquation alphaEquation,
-        GlStateManager.SourceFactor srcColorFactor,
-        GlStateManager.DestFactor dstColorFactor,
-        GlStateManager.SourceFactor srcAlphaFactor,
-        GlStateManager.DestFactor dstAlphaFactor
+        SourceFactor srcColorFactor,
+        DestFactor dstColorFactor,
+        SourceFactor srcAlphaFactor,
+        DestFactor dstAlphaFactor
 ) {
 
-    public static final Codec<GlStateManager.SourceFactor> SOURCE_FACTOR_CODEC = EnumCodec
-            .<GlStateManager.SourceFactor>builder("Source Factor")
-            .values(GlStateManager.SourceFactor.class)
+    public static final Codec<SourceFactor> SOURCE_FACTOR_CODEC = EnumCodec
+            .<SourceFactor>builder("Source Factor")
+            .values(SourceFactor.class)
             .build();
-    public static final Codec<GlStateManager.DestFactor> DESTINATION_FACTOR_CODEC = EnumCodec
-            .<GlStateManager.DestFactor>builder("Destination Factor")
-            .values(GlStateManager.DestFactor.class)
+    public static final Codec<DestFactor> DESTINATION_FACTOR_CODEC = EnumCodec
+            .<DestFactor>builder("Destination Factor")
+            .values(DestFactor.class)
             .build();
 
     public static final Codec<ShaderBlendMode> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BlendEquation.CODEC.optionalFieldOf("func", BlendEquation.ADD).forGetter(ShaderBlendMode::colorEquation),
             BlendEquation.CODEC.optionalFieldOf("alphafunc", BlendEquation.ADD).forGetter(ShaderBlendMode::alphaEquation),
-            SOURCE_FACTOR_CODEC.optionalFieldOf("srcrgb", GlStateManager.SourceFactor.ONE).forGetter(ShaderBlendMode::srcColorFactor),
-            DESTINATION_FACTOR_CODEC.optionalFieldOf("dstrgb", GlStateManager.DestFactor.ZERO).forGetter(ShaderBlendMode::dstColorFactor),
-            SOURCE_FACTOR_CODEC.optionalFieldOf("srcalpha", GlStateManager.SourceFactor.ONE).forGetter(ShaderBlendMode::srcAlphaFactor),
-            DESTINATION_FACTOR_CODEC.optionalFieldOf("dstalpha", GlStateManager.DestFactor.ZERO).forGetter(ShaderBlendMode::dstAlphaFactor)
+            SOURCE_FACTOR_CODEC.optionalFieldOf("srcrgb", SourceFactor.ONE).forGetter(ShaderBlendMode::srcColorFactor),
+            DESTINATION_FACTOR_CODEC.optionalFieldOf("dstrgb", DestFactor.ZERO).forGetter(ShaderBlendMode::dstColorFactor),
+            SOURCE_FACTOR_CODEC.optionalFieldOf("srcalpha", SourceFactor.ONE).forGetter(ShaderBlendMode::srcAlphaFactor),
+            DESTINATION_FACTOR_CODEC.optionalFieldOf("dstalpha", DestFactor.ZERO).forGetter(ShaderBlendMode::dstAlphaFactor)
     ).apply(instance, ShaderBlendMode::new));
 
     /**
@@ -54,7 +57,7 @@ public record ShaderBlendMode(
         if (this.colorEquation != BlendEquation.ADD || this.alphaEquation != BlendEquation.ADD) {
             glBlendEquationSeparate(this.colorEquation.getGlType(), this.alphaEquation.getGlType());
         }
-        RenderSystem.blendFuncSeparate(this.srcColorFactor, this.dstColorFactor, this.srcAlphaFactor, this.dstAlphaFactor);
+        GlStateManager._blendFuncSeparate(gl(this.srcColorFactor), gl(this.dstColorFactor), gl(this.srcAlphaFactor), gl(this.dstAlphaFactor));
     }
 
     /**
@@ -62,6 +65,45 @@ public record ShaderBlendMode(
      */
     public boolean hasEquation() {
         return this.colorEquation != BlendEquation.ADD || this.alphaEquation != BlendEquation.ADD;
+    }
+
+    private static int gl(SourceFactor factor) {
+        return switch (factor) {
+            case CONSTANT_ALPHA -> GL_CONSTANT_ALPHA;
+            case CONSTANT_COLOR -> GL_CONSTANT_COLOR;
+            case DST_ALPHA -> GL_DST_ALPHA;
+            case DST_COLOR -> GL_DST_COLOR;
+            case ONE -> GL_ONE;
+            case ONE_MINUS_CONSTANT_ALPHA -> GL_ONE_MINUS_CONSTANT_ALPHA;
+            case ONE_MINUS_CONSTANT_COLOR -> GL_ONE_MINUS_CONSTANT_COLOR;
+            case ONE_MINUS_DST_ALPHA -> GL_ONE_MINUS_DST_ALPHA;
+            case ONE_MINUS_DST_COLOR -> GL_ONE_MINUS_DST_COLOR;
+            case ONE_MINUS_SRC_ALPHA -> GL_ONE_MINUS_SRC_ALPHA;
+            case ONE_MINUS_SRC_COLOR -> GL_ONE_MINUS_SRC_COLOR;
+            case SRC_ALPHA -> GL_SRC_ALPHA;
+            case SRC_ALPHA_SATURATE -> GL_SRC_ALPHA_SATURATE;
+            case SRC_COLOR -> GL_SRC_COLOR;
+            case ZERO -> GL_ZERO;
+        };
+    }
+
+    private static int gl(DestFactor factor) {
+        return switch (factor) {
+            case CONSTANT_ALPHA -> GL_CONSTANT_ALPHA;
+            case CONSTANT_COLOR -> GL_CONSTANT_COLOR;
+            case DST_ALPHA -> GL_DST_ALPHA;
+            case DST_COLOR -> GL_DST_COLOR;
+            case ONE -> GL_ONE;
+            case ONE_MINUS_CONSTANT_ALPHA -> GL_ONE_MINUS_CONSTANT_ALPHA;
+            case ONE_MINUS_CONSTANT_COLOR -> GL_ONE_MINUS_CONSTANT_COLOR;
+            case ONE_MINUS_DST_ALPHA -> GL_ONE_MINUS_DST_ALPHA;
+            case ONE_MINUS_DST_COLOR -> GL_ONE_MINUS_DST_COLOR;
+            case ONE_MINUS_SRC_ALPHA -> GL_ONE_MINUS_SRC_ALPHA;
+            case ONE_MINUS_SRC_COLOR -> GL_ONE_MINUS_SRC_COLOR;
+            case SRC_ALPHA -> GL_SRC_ALPHA;
+            case SRC_COLOR -> GL_SRC_COLOR;
+            case ZERO -> GL_ZERO;
+        };
     }
 
     /**

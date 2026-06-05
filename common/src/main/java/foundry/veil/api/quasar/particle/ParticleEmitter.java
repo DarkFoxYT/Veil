@@ -12,10 +12,10 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -150,7 +150,7 @@ public class ParticleEmitter {
         for (Holder<ParticleModuleData> module : allModules) {
             if (!module.isBound()) {
                 if (REPORTED_MODULES.add(module)) {
-                    Veil.LOGGER.error("Unknown module: {}", (module instanceof Holder.Reference<ParticleModuleData> ref ? ref.key().location() : module.getClass().getName()));
+                    Veil.LOGGER.error("Unknown module: {}", (module instanceof Holder.Reference<ParticleModuleData> ref ? ref.key().identifier() : module.getClass().getName()));
                 }
                 continue;
             }
@@ -230,7 +230,7 @@ public class ParticleEmitter {
             return;
         }
 
-        Vec3 projectedView = camera.getPosition();
+        Vec3 projectedView = camera.position();
         Vector3f renderOffset = new Vector3f();
         RenderType lastRenderType = null;
         VertexConsumer builder = null;
@@ -323,7 +323,7 @@ public class ParticleEmitter {
         this.removeTask = this.particleManager.getScheduler().schedule(this::expire, this.maxLifetime).toCompletableFuture();
     }
 
-    public @Nullable ResourceLocation getRegistryName() {
+    public @Nullable Identifier getRegistryName() {
         return this.emitterData.getRegistryId();
     }
 

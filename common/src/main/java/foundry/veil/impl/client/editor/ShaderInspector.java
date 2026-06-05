@@ -1,5 +1,7 @@
 package foundry.veil.impl.client.editor;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.Veil;
 import foundry.veil.api.client.editor.SingleWindowInspector;
@@ -28,7 +30,7 @@ import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.PostPass;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import org.jetbrains.annotations.ApiStatus;
@@ -78,7 +80,7 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
 
     //    private final CodeEditor codeEditor;
     private final ImBoolean shaderInfoVisible;
-    private final Object2IntMap<ResourceLocation> shaders;
+    private final Object2IntMap<Identifier> shaders;
 
     private final ImString programFilterText;
     private Pattern programFilter;
@@ -110,7 +112,7 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
         this.removedDefinitions = new HashSet<>(1);
     }
 
-    private void setSelectedProgram(@Nullable ResourceLocation name) {
+    private void setSelectedProgram(@Nullable Identifier name) {
         if (this.selectedProgram != null) {
             this.selectedProgram.free();
         }
@@ -205,8 +207,8 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
         }
 
         if (ImGui.beginListBox("##programs", ImGui.getContentRegionAvailX(), -Float.MIN_VALUE)) {
-            for (Object2IntMap.Entry<ResourceLocation> entry : this.shaders.object2IntEntrySet()) {
-                ResourceLocation name = entry.getKey();
+            for (Object2IntMap.Entry<Identifier> entry : this.shaders.object2IntEntrySet()) {
+                Identifier name = entry.getKey();
                 boolean selected = this.selectedProgram != null && name.equals(this.selectedProgram.name);
 
                 if (this.programFilter != null && !this.programFilter.matcher(name.toString()).find()) {
@@ -221,7 +223,7 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
                 }
 
                 ImGui.sameLine();
-                VeilImGuiUtil.resourceLocation(name);
+                VeilImGuiUtil.Identifier(name);
 
                 ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, 0, ImGui.getStyle().getItemSpacingY());
                 ImGui.sameLine();
@@ -346,7 +348,7 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
 
                             ShaderUniformCache.UniformBlock block = entry.getValue();
                             int buffer = glGetIntegeri(GL_UNIFORM_BUFFER_BINDING, glGetActiveUniformBlocki(program, block.index(), GL_UNIFORM_BLOCK_BINDING));
-                            RenderSystem.glBindBuffer(GL_COPY_READ_BUFFER, buffer);
+                            GlStateManager._glBindBuffer(GL_COPY_READ_BUFFER, buffer);
                             ByteBuffer data = glMapBuffer(GL_COPY_READ_BUFFER, GL_READ_ONLY, block.size(), null);
                             for (ShaderUniformCache.Uniform field : block.fields()) {
                                 String name = field.name().startsWith(blockName) ? field.name().substring(blockName.length() + 1) : field.name();
@@ -378,7 +380,7 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
 
                                 ShaderUniformCache.StorageBlock block = entry.getValue();
                                 glGetProgramResourceiv(program, GL_SHADER_STORAGE_BLOCK, block.index(), properties, null, buffer);
-                                RenderSystem.glBindBuffer(GL_COPY_READ_BUFFER, buffer.get(0));
+                                GlStateManager._glBindBuffer(GL_COPY_READ_BUFFER, buffer.get(0));
                                 int size = block.array() ? glGetBufferParameteri(GL_COPY_READ_BUFFER, GL_BUFFER_SIZE) : block.size();
                                 ByteBuffer data = glMapBuffer(GL_COPY_READ_BUFFER, GL_READ_ONLY, size, null);
 
@@ -728,13 +730,13 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
         }
     }
 
-    private record SelectedProgram(ResourceLocation name,
+    private record SelectedProgram(Identifier name,
                                    int programId,
                                    Int2IntMap shaders,
                                    ShaderUniformCache uniforms,
                                    Int2ObjectMap<ByteBuffer> data) implements NativeResource {
 
-        public static SelectedProgram create(ResourceLocation name, int program) {
+        public static SelectedProgram create(Identifier name, int program) {
             int[] attachedShaders = new int[glGetProgrami(program, GL_ATTACHED_SHADERS)];
             glGetAttachedShaders(program, null, attachedShaders);
 
@@ -765,21 +767,21 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
     private enum TabSource {
         VANILLA(Component.translatable("inspector.veil.shader.source.vanilla")) {
             @Override
-            public void addShaders(ObjIntConsumer<ResourceLocation> registry) {
+            public void addShaders(ObjIntConsumer<Identifier> registry) {
                 DebugGameRendererAccessor accessor = (DebugGameRendererAccessor) Minecraft.getInstance().gameRenderer;
                 Map<String, ShaderInstance> shaders = accessor.getShaders();
                 for (ShaderInstance shader : shaders.values()) {
                     String name = shader.getName().isBlank() ? Integer.toString(shader.getId()) : shader.getName();
-                    registry.accept(ResourceLocation.parse(name), shader.getId());
+                    registry.accept(Identifier.parse(name), shader.getId());
                 }
 
                 ShaderInstance blitShader = accessor.getBlitShader();
-                registry.accept(ResourceLocation.parse(blitShader.getName()), blitShader.getId());
+                registry.accept(Identifier.parse(blitShader.getName()), blitShader.getId());
             }
         },
         VANILLA_POST(Component.translatable("inspector.veil.shader.source.vanilla_post")) {
             @Override
-            public void addShaders(ObjIntConsumer<ResourceLocation> registry) {
+            public void addShaders(ObjIntConsumer<Identifier> registry) {
                 DebugLevelRendererAccessor levelRendererAccessor = (DebugLevelRendererAccessor) Minecraft.getInstance().levelRenderer;
                 this.addChainPasses(registry, levelRendererAccessor.getEntityEffect());
                 this.addChainPasses(registry, levelRendererAccessor.getTransparencyChain());
@@ -787,22 +789,20 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
                 this.addChainPasses(registry, gameRendererAccessor.getPostEffect());
             }
 
-            private void addChainPasses(ObjIntConsumer<ResourceLocation> registry, @Nullable PostChain chain) {
+            private void addChainPasses(ObjIntConsumer<Identifier> registry, @Nullable PostChain chain) {
                 if (chain == null) {
                     return;
                 }
 
                 List<PostPass> passes = ((DebugPostChainAccessor) chain).getPasses();
                 for (PostPass pass : passes) {
-                    EffectInstance effect = pass.getEffect();
-                    registry.accept(ResourceLocation.parse(effect.getName()), effect.getId());
                 }
             }
         },
         VEIL(Component.translatable("inspector.veil.shader.source.veil")) {
             @Override
-            public void addShaders(ObjIntConsumer<ResourceLocation> registry) {
-                Map<ResourceLocation, ShaderProgram> shaders = VeilRenderSystem.renderer().getShaderManager().getShaders();
+            public void addShaders(ObjIntConsumer<Identifier> registry) {
+                Map<Identifier, ShaderProgram> shaders = VeilRenderSystem.renderer().getShaderManager().getShaders();
                 for (ShaderProgram shader : shaders.values()) {
                     registry.accept(shader.getName(), shader.getProgram());
                 }
@@ -810,24 +810,24 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
         },
         IRIS(Component.translatable("inspector.veil.shader.source.iris"), () -> IrisCompat.INSTANCE != null) {
             @Override
-            public void addShaders(ObjIntConsumer<ResourceLocation> registry) {
+            public void addShaders(ObjIntConsumer<Identifier> registry) {
                 for (ShaderInstance shader : IrisCompat.INSTANCE.getLoadedShaders()) {
                     String name = shader.getName().isBlank() ? Integer.toString(shader.getId()) : shader.getName();
-                    registry.accept(ResourceLocation.parse(name), shader.getId());
+                    registry.accept(Identifier.parse(name), shader.getId());
                 }
             }
         },
         SODIUM(Component.translatable("inspector.veil.shader.source.sodium"), () -> SodiumCompat.INSTANCE != null) {
             @Override
-            public void addShaders(ObjIntConsumer<ResourceLocation> registry) {
-                for (Object2IntMap.Entry<ResourceLocation> entry : SodiumCompat.INSTANCE.getLoadedShaders().object2IntEntrySet()) {
+            public void addShaders(ObjIntConsumer<Identifier> registry) {
+                for (Object2IntMap.Entry<Identifier> entry : SodiumCompat.INSTANCE.getLoadedShaders().object2IntEntrySet()) {
                     registry.accept(entry.getKey(), entry.getIntValue());
                 }
             }
         },
         OTHER(Component.translatable("inspector.veil.shader.source.unknown")) {
             @Override
-            public void addShaders(ObjIntConsumer<ResourceLocation> registry) {
+            public void addShaders(ObjIntConsumer<Identifier> registry) {
                 IntSet programs = new IntOpenHashSet();
                 for (int i = 1; i < 10000; i++) {
                     if (!glIsProgram(i)) {
@@ -846,7 +846,7 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
                 }
 
                 for (int program : programs) {
-                    registry.accept(ResourceLocation.fromNamespaceAndPath("unknown", Integer.toString(program)), program);
+                    registry.accept(Identifier.fromNamespaceAndPath("unknown", Integer.toString(program)), program);
                 }
             }
         };
@@ -863,6 +863,6 @@ public class ShaderInspector extends SingleWindowInspector implements ResourceMa
             this.active = active;
         }
 
-        public abstract void addShaders(ObjIntConsumer<ResourceLocation> registry);
+        public abstract void addShaders(ObjIntConsumer<Identifier> registry);
     }
 }

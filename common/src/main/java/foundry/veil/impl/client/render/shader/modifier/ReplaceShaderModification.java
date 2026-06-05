@@ -2,11 +2,11 @@ package foundry.veil.impl.client.render.shader.modifier;
 
 import io.github.ocelot.glslprocessor.api.GlslSyntaxException;
 import io.github.ocelot.glslprocessor.api.node.GlslTree;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
-public record ReplaceShaderModification(int priority, ResourceLocation veilShader) implements ShaderModification {
+public record ReplaceShaderModification(int priority, Identifier veilShader) implements ShaderModification {
 
     @Override
     public void inject(GlslTree tree, VeilJobParameters parameters) throws GlslSyntaxException {

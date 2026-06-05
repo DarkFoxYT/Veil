@@ -8,7 +8,7 @@ import foundry.veil.api.resource.VeilResourceAction;
 import foundry.veil.api.resource.VeilResourceInfo;
 import foundry.veil.api.resource.VeilResourceManager;
 import foundry.veil.impl.resource.action.TextEditAction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashSet;
@@ -38,16 +38,16 @@ public record VeilShaderFileResource(VeilResourceInfo resourceInfo,
         }
 
         ShaderSourceSet sourceSet = this.shaderManager.getSourceSet();
-        ResourceLocation id = sourceSet.getTypeConverter(type).fileToId(this.resourceInfo.location());
-        Set<ResourceLocation> programs = new HashSet<>();
+        Identifier id = sourceSet.getTypeConverter(type).fileToId(this.resourceInfo.location());
+        Set<Identifier> programs = new HashSet<>();
 
-        for (Map.Entry<ResourceLocation, ShaderProgram> entry : this.shaderManager.getShaders().entrySet()) {
+        for (Map.Entry<Identifier, ShaderProgram> entry : this.shaderManager.getShaders().entrySet()) {
             ProgramDefinition definition = entry.getValue().getDefinition();
             if (definition == null) {
                 continue;
             }
 
-            ResourceLocation sourceName = definition.shaders().get(type);
+            Identifier sourceName = definition.shaders().get(type);
             if (sourceName == null) {
                 continue;
             }
@@ -58,7 +58,7 @@ public record VeilShaderFileResource(VeilResourceInfo resourceInfo,
         }
 
         // It's better to copy the set and add them all here so we don't make the other threads wait
-        for (ResourceLocation program : programs) {
+        for (Identifier program : programs) {
             this.shaderManager.scheduleRecompile(program);
         }
     }

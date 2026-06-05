@@ -3,7 +3,7 @@ package foundry.veil.impl.client.render.framebuffer;
 import com.google.common.base.Suppliers;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.api.client.render.VeilRenderBridge;
 import foundry.veil.api.client.render.VeilRenderSystem;
@@ -86,7 +86,7 @@ public abstract class AdvancedFboImpl implements AdvancedFbo {
     public void bind(boolean setViewport) {
         GlStateManager._glBindFramebuffer(GL_FRAMEBUFFER, this.id);
         if (setViewport) {
-            RenderSystem.viewport(0, 0, this.width, this.height);
+            GlStateManager._viewport(0, 0, this.width, this.height);
         }
     }
 
@@ -94,7 +94,7 @@ public abstract class AdvancedFboImpl implements AdvancedFbo {
     public void bindDraw(boolean setViewport) {
         GlStateManager._glBindFramebuffer(GL_DRAW_FRAMEBUFFER, this.id);
         if (setViewport) {
-            RenderSystem.viewport(0, 0, this.width, this.height);
+            GlStateManager._viewport(0, 0, this.width, this.height);
         }
     }
 
@@ -202,19 +202,14 @@ public abstract class AdvancedFboImpl implements AdvancedFbo {
         private final AdvancedFboImpl fbo;
 
         private Wrapper(AdvancedFboImpl fbo) {
-            super(fbo.width, fbo.height, fbo.hasDepthAttachment(), Minecraft.ON_OSX);
+            super("Veil Advanced FBO Wrapper", fbo.width, fbo.height, fbo.hasDepthAttachment());
             this.fbo = fbo;
             this.width = this.fbo.getWidth();
             this.height = this.fbo.getHeight();
-            this.viewWidth = this.width;
-            this.viewHeight = this.height;
-            this.frameBufferId = this.fbo.id;
-            this.colorTextureId = this.fbo.isColorTextureAttachment(0) ? this.fbo.getColorTextureAttachment(0).getId() : 0;
-            this.depthBufferId = this.fbo.isDepthTextureAttachment() ? this.fbo.getDepthTextureAttachment().getId() : 0;
         }
 
         @Override
-        public void resize(int width, int height, boolean onMac) {
+        public void resize(int width, int height) {
         }
 
         @Override
@@ -223,12 +218,10 @@ public abstract class AdvancedFboImpl implements AdvancedFbo {
         }
 
         @Override
-        public void createBuffers(int width, int height, boolean onMac) {
+        public void createBuffers(int width, int height) {
         }
 
-        @Override
         public void setFilterMode(int framebufferFilter) {
-            this.filterMode = framebufferFilter;
             if (VeilRenderSystem.directStateAccessSupported()) {
                 for (int i = 0; i < this.fbo.getColorAttachments(); i++) {
                     int texture = this.fbo.getColorTextureAttachment(i).getId();
@@ -249,36 +242,30 @@ public abstract class AdvancedFboImpl implements AdvancedFbo {
             }
         }
 
-        @Override
         public void setClearColor(float red, float green, float blue, float alpha) {
-            super.setClearColor(red, green, blue, alpha);
             this.clearChannels[0] = red;
             this.clearChannels[1] = green;
             this.clearChannels[2] = blue;
             this.clearChannels[3] = alpha;
         }
 
-        @Override
         public void clear(boolean clearError) {
-            RenderSystem.assertOnRenderThreadOrInit();
+            RenderSystem.assertOnRenderThread();
             this.fbo.clear(this.clearChannels[0], this.clearChannels[1], this.clearChannels[2], this.clearChannels[3], this.fbo.getClearMask());
         }
 
-        @Override
         public void bindRead() {
             if (this.fbo.hasColorAttachment(0)) {
                 this.fbo.getColorAttachment(0).bindAttachment();
             }
         }
 
-        @Override
         public void unbindRead() {
             if (this.fbo.hasColorAttachment(0)) {
                 this.fbo.getColorAttachment(0).unbindAttachment();
             }
         }
 
-        @Override
         public void bindWrite(boolean setViewport) {
             this.fbo.bind(setViewport);
         }

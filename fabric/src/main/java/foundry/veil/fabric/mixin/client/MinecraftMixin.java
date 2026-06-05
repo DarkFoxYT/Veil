@@ -21,7 +21,7 @@ public class MinecraftMixin {
         FabricVeilRegisterFixedBuffersEvent.EVENT.invoker().onRegisterFixedBuffers(FabricRenderTypeStageHandler::register);
     }
 
-    @Inject(method = "close", at = @At(value = "INVOKE", target = "Lnet/minecraft/Util;shutdownExecutors()V", shift = At.Shift.BEFORE))
+    @Inject(method = "close", at = @At("HEAD"))
     public void close(CallbackInfo ci) {
         FabricFreeNativeResourcesEvent.EVENT.invoker().onFree();
     }

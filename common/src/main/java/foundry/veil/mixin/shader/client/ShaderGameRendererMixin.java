@@ -12,7 +12,7 @@ import foundry.veil.impl.client.render.shader.modifier.ReplaceShaderModification
 import foundry.veil.impl.client.render.shader.modifier.ShaderModification;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -33,7 +33,7 @@ public class ShaderGameRendererMixin {
         VeilRenderer renderer = VeilRenderSystem.renderer();
         ShaderModificationManager modificationManager = renderer.getShaderModificationManager();
         for (Pair<ShaderInstance, Consumer<ShaderInstance>> pair : loadedShaders) {
-            ResourceLocation loc = ResourceLocation.tryParse(pair.getFirst().getName());
+            Identifier loc = Identifier.tryParse(pair.getFirst().getName());
             if (loc == null) {
                 Veil.LOGGER.error("Failed to replace vanilla shader '{}' with veil shader: Malformed name", pair.getFirst().getName());
                 continue;

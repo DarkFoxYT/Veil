@@ -15,9 +15,9 @@ import foundry.veil.api.flare.model.BakedShell;
 import foundry.veil.api.flare.modifier.PropertyModifier;
 import foundry.veil.api.util.CodecUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.*;
@@ -33,7 +33,7 @@ import java.util.Optional;
 public final class FlareModel {
 
     public static final Codec<FlareModel> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("path").forGetter(FlareModel::getShell),
+            Identifier.CODEC.fieldOf("path").forGetter(FlareModel::getShell),
             CodecUtil.VECTOR3FC_CODEC.fieldOf("positionOffset").forGetter(FlareModel::getPositionOffset),
             CodecUtil.VECTOR3FC_CODEC.fieldOf("rotationOffset").forGetter(FlareModel::getRotationOffset),
             CodecUtil.VECTOR3FC_CODEC.fieldOf("scaleOffset").forGetter(FlareModel::getScaleOffset),
@@ -47,14 +47,14 @@ public final class FlareModel {
     public static final String ROTATION_PROPERTY_NAME = "model::rotation";
     public static final String SCALE_PROPERTY_NAME = "model::scale";
 
-    private final ResourceLocation shell;
+    private final Identifier shell;
     final Vec3ModelProperty positionOffset;
     final RotationModelProperty rotationOffset;
     final Vec3ModelProperty scaleOffset;
     final Mat4ModelProperty modelToWorld;
     private final FlareMaterial[] materials;
 
-    public FlareModel(ResourceLocation shell, Vector3fc position, Vector3fc rotation, Vector3fc scale, Collection<FlareMaterial> materials) {
+    public FlareModel(Identifier shell, Vector3fc position, Vector3fc rotation, Vector3fc scale, Collection<FlareMaterial> materials) {
         this.shell = shell;
         this.positionOffset = new Vec3ModelProperty(new Vector3f(position));
         this.rotationOffset = new RotationModelProperty(new Vector3f(rotation));
@@ -63,7 +63,7 @@ public final class FlareModel {
         this.materials = materials.toArray(FlareMaterial[]::new);
     }
 
-    public void render(EffectHost host, MatrixStack matrixStack, Map<String, List<PropertyModifier<?>>> modifiers, @Nullable Map<ResourceLocation, BakedShell> shellOverrides) {
+    public void render(EffectHost host, MatrixStack matrixStack, Map<String, List<PropertyModifier<?>>> modifiers, @Nullable Map<Identifier, BakedShell> shellOverrides) {
         Vector3fc positionOffset = this.positionOffset.getValue();
         Quaternionfc rotationOffset = this.rotationOffset.getRotation();
         Vector3fc scaleOffset = this.scaleOffset.getValue();
@@ -77,7 +77,7 @@ public final class FlareModel {
                 shellOverrides.get(this.shell) :
                 FlareEffectManager.getInstance().getBakedShell(this.shell);
 
-        Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().position();
 
         this.modelToWorld.modify(
                 MODEL_TO_LOCAL_MATRIX.translate((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, MATRIX4F),
@@ -88,7 +88,6 @@ public final class FlareModel {
         Matrix4fStack modelViewStack = RenderSystem.getModelViewStack();
         MATRIX4F.set(modelViewStack);
         modelViewStack.mul(MODEL_TO_LOCAL_MATRIX);
-        RenderSystem.applyModelViewMatrix();
 
         VertexArray vertexArray = bakedShell.getVertexArray();
         vertexArray.bind();
@@ -104,38 +103,22 @@ public final class FlareModel {
         VertexArray.unbind();
 
         modelViewStack.set(MATRIX4F);
-        RenderSystem.applyModelViewMatrix();
     }
 
     private void draw(RenderType renderType, VertexArray vertexArray, EffectHost host, FlareMaterial material, Map<String, List<PropertyModifier<?>>> modifiers) {
-        while (renderType instanceof VeilRenderType.RenderTypeWrapper wrapper) {
-            renderType = wrapper.get();
-        }
-
         if (renderType == null) {
             return;
         }
 
         vertexArray.setup(renderType);
-        ShaderInstance currentShader = RenderSystem.getShader();
+        ShaderInstance currentShader = null;
         material.applyProperties(host, currentShader, modifiers);
         vertexArray.draw();
         material.resetProperties(host, currentShader);
         vertexArray.clear(renderType);
-
-        if (renderType instanceof VeilRenderType.LayeredRenderType layeredRenderType) {
-            for (RenderType layer : layeredRenderType.getLayers()) {
-                vertexArray.setup(layer);
-                currentShader = RenderSystem.getShader();
-                material.applyProperties(host, currentShader, modifiers);
-                vertexArray.draw();
-                material.resetProperties(host, currentShader);
-                vertexArray.clear(layer);
-            }
-        }
     }
 
-    public ResourceLocation getShell() {
+    public Identifier getShell() {
         return this.shell;
     }
 

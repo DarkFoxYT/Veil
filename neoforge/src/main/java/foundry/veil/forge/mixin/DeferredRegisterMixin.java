@@ -3,7 +3,7 @@ package foundry.veil.forge.mixin;
 import foundry.veil.forge.ext.DeferredRegisterExtensions;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.spongepowered.asm.mixin.Final;
@@ -22,7 +22,7 @@ public abstract class DeferredRegisterMixin<T> implements DeferredRegisterExtens
     private boolean seenRegisterEvent;
 
     @Shadow
-    protected abstract <I extends T> DeferredHolder<T, I> createHolder(ResourceKey<? extends Registry<T>> registryKey, ResourceLocation key);
+    protected abstract <I extends T> DeferredHolder<T, I> createHolder(ResourceKey<? extends Registry<T>> registryKey, Identifier key);
 
     @Shadow
     @Final
@@ -33,7 +33,7 @@ public abstract class DeferredRegisterMixin<T> implements DeferredRegisterExtens
     private Map<DeferredHolder<T, ? extends T>, Supplier<? extends T>> entries;
 
     @Override
-    public <I extends T> DeferredHolder<T, I> register(ResourceLocation key, Function<ResourceLocation, ? extends I> func) {
+    public <I extends T> DeferredHolder<T, I> register(Identifier key, Function<Identifier, ? extends I> func) {
         if (seenRegisterEvent) {
             throw new IllegalStateException("Cannot register new entries to DeferredRegister after RegisterEvent has been fired.");
         }

@@ -120,7 +120,7 @@ public class AdvancedFboRenderAttachment implements AdvancedFboAttachment {
      * @return The OpenGL renderbuffer id of this attachment
      */
     public int getId() {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         if (this.id == 0) {
             this.id = VeilRenderSystem.directStateAccessSupported() ? glCreateRenderbuffers() : glGenRenderbuffers();
         }

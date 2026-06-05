@@ -15,14 +15,14 @@ public class RegistriesMixin {
     @Inject(method = "elementsDirPath", at = @At("HEAD"), cancellable = true)
     private static void veilElementsPath(ResourceKey<? extends Registry<?>> pRegistryKey, CallbackInfoReturnable<String> cir) {
         if (VeilDynamicRegistry.isLoading()) {
-            cir.setReturnValue(pRegistryKey.location().getPath());
+            cir.setReturnValue(pRegistryKey.identifier().getPath());
         }
     }
 
     @Inject(method = "tagsDirPath", at = @At("HEAD"), cancellable = true)
     private static void veilTagsPath(ResourceKey<? extends Registry<?>> pRegistryKey, CallbackInfoReturnable<String> cir) {
         if (VeilDynamicRegistry.isLoading()) {
-            cir.setReturnValue(pRegistryKey.location().getPath());
+            cir.setReturnValue(pRegistryKey.identifier().getPath());
         }
     }
 }

@@ -2,7 +2,7 @@ package foundry.veil.forge.event;
 
 import foundry.veil.api.event.VeilRegisterBlockLayersEvent;
 import foundry.veil.api.event.VeilRegisterFixedBuffersEvent;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.neoforged.bus.api.Event;
 import net.neoforged.fml.event.IModBusEvent;
 

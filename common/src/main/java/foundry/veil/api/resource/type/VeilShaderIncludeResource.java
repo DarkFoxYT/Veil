@@ -8,7 +8,7 @@ import foundry.veil.api.resource.VeilResourceAction;
 import foundry.veil.api.resource.VeilResourceInfo;
 import foundry.veil.api.resource.VeilResourceManager;
 import foundry.veil.impl.resource.action.TextEditAction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashSet;
@@ -31,18 +31,18 @@ public record VeilShaderIncludeResource(VeilResourceInfo resourceInfo) implement
 
     @Override
     public void hotReload(VeilResourceManager resourceManager) {
-        ResourceLocation id = ShaderManager.INCLUDE_LISTER.fileToId(this.resourceInfo.location());
+        Identifier id = ShaderManager.INCLUDE_LISTER.fileToId(this.resourceInfo.location());
 
         ShaderManager shaderManager = VeilRenderSystem.renderer().getShaderManager();
-        Set<ResourceLocation> programs = getShaders(id, shaderManager);
-        for (ResourceLocation program : programs) {
+        Set<Identifier> programs = getShaders(id, shaderManager);
+        for (Identifier program : programs) {
             shaderManager.scheduleRecompile(program);
         }
     }
 
-    private static Set<ResourceLocation> getShaders(ResourceLocation id, ShaderManager shaderManager) {
-        Set<ResourceLocation> programs = new HashSet<>();
-        for (Map.Entry<ResourceLocation, ShaderProgram> entry : shaderManager.getShaders().entrySet()) {
+    private static Set<Identifier> getShaders(Identifier id, ShaderManager shaderManager) {
+        Set<Identifier> programs = new HashSet<>();
+        for (Map.Entry<Identifier, ShaderProgram> entry : shaderManager.getShaders().entrySet()) {
             ShaderProgram program = entry.getValue();
             for (CompiledShader shader : program.getShaders().values()) {
                 if (shader.includes().contains(id)) {

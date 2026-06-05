@@ -11,7 +11,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2LongArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.system.MemoryUtil;
 
@@ -50,7 +49,7 @@ public class ShaderTextureCache {
 
         int maxSampler = VeilRenderSystem.maxCombinedTextureUnits();
         int count = 0;
-        int missingTexture = MissingTextureAtlasSprite.getTexture().getId();
+        int missingTexture = VeilRenderSystem.getMissingTextureId();
         boolean hasMissing = false;
         String last = null;
 
@@ -75,7 +74,7 @@ public class ShaderTextureCache {
                         this.textureTargets.put(i + 1, this.textureTargets.get(i));
                     }
                     this.textureBindings.position(position + 1);
-                    this.textureBindings.put(0, MissingTextureAtlasSprite.getTexture().getId());
+                    this.textureBindings.put(0, missingTexture);
                     this.textureTargets.position(position + 1);
                     this.textureTargets.put(0, GL_TEXTURE_2D);
 
@@ -99,7 +98,7 @@ public class ShaderTextureCache {
                         this.textureBindings.put(i + 1, this.textureBindings.get(i));
                         this.textureTargets.put(i + 1, this.textureTargets.get(i));
                     }
-                    this.textureBindings.put(0, MissingTextureAtlasSprite.getTexture().getId());
+                    this.textureBindings.put(0, missingTexture);
                     this.textureTargets.put(0, GL_TEXTURE_2D);
 
                     // Delete the last texture binding

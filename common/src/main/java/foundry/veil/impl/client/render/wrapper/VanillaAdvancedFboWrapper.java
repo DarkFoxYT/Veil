@@ -2,13 +2,13 @@ package foundry.veil.impl.client.render.wrapper;
 
 import com.google.common.base.Suppliers;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.framebuffer.AdvancedFboAttachment;
 import foundry.veil.api.client.render.framebuffer.AdvancedFboTextureAttachment;
 import foundry.veil.api.client.render.texture.TextureFilter;
-import foundry.veil.mixin.framebuffer.accessor.FramebufferRenderTargetAccessor;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -37,8 +37,8 @@ public abstract class VanillaAdvancedFboWrapper implements AdvancedFbo {
 
     public VanillaAdvancedFboWrapper(Supplier<RenderTarget> renderTargetSupplier) {
         this.renderTargetSupplier = renderTargetSupplier;
-        this.colorBuffer = Suppliers.memoize(() -> new AttachmentWrapper(this, () -> this.toRenderTarget().getColorTextureId(), GL_COLOR_ATTACHMENT0));
-        this.depthBuffer = Suppliers.memoize(() -> new AttachmentWrapper(this, () -> this.toRenderTarget().getDepthTextureId(), GL_DEPTH_ATTACHMENT));
+        this.colorBuffer = Suppliers.memoize(() -> new AttachmentWrapper(this, () -> VeilRenderSystem.getColorTextureId(this.toRenderTarget()), GL_COLOR_ATTACHMENT0));
+        this.depthBuffer = Suppliers.memoize(() -> new AttachmentWrapper(this, () -> VeilRenderSystem.getDepthTextureId(this.toRenderTarget()), GL_DEPTH_ATTACHMENT));
         this.drawBuffers = new int[]{GL_COLOR_ATTACHMENT0};
 
         this.hasStencil = false;
@@ -52,14 +52,12 @@ public abstract class VanillaAdvancedFboWrapper implements AdvancedFbo {
 
     @Override
     public void clear() {
-        float[] clearChannels = ((FramebufferRenderTargetAccessor) this.toRenderTarget()).getClearChannels();
-        this.clear(clearChannels[0], clearChannels[1], clearChannels[2], clearChannels[3], this.getClearMask(), this.getDrawBuffers());
+        this.clear(0.0F, 0.0F, 0.0F, 0.0F, this.getClearMask(), this.getDrawBuffers());
     }
 
     @Override
     public void clear(int clearMask) {
-        float[] clearChannels = ((FramebufferRenderTargetAccessor) this.toRenderTarget()).getClearChannels();
-        this.clear(clearChannels[0], clearChannels[1], clearChannels[2], clearChannels[3], clearMask, this.getDrawBuffers());
+        this.clear(0.0F, 0.0F, 0.0F, 0.0F, clearMask, this.getDrawBuffers());
     }
 
     // Don't do anything here because there's no point in disabling the ONLY draw buffer. Use glColorMask instead
@@ -74,21 +72,21 @@ public abstract class VanillaAdvancedFboWrapper implements AdvancedFbo {
 
     @Override
     public void bind(boolean setViewport) {
-        this.toRenderTarget().bindWrite(setViewport);
+        VeilRenderSystem.bind(this.toRenderTarget(), setViewport);
     }
 
     @Override
     public void bindDraw(boolean setViewport) {
         RenderTarget renderTarget = this.toRenderTarget();
-        GlStateManager._glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderTarget.frameBufferId);
+        GlStateManager._glBindFramebuffer(GL_DRAW_FRAMEBUFFER, VeilRenderSystem.getFramebufferId(renderTarget));
         if (setViewport) {
-            RenderSystem.viewport(0, 0, renderTarget.viewWidth, renderTarget.viewHeight);
+            GlStateManager._viewport(0, 0, renderTarget.width, renderTarget.height);
         }
     }
 
     @Override
     public int getId() {
-        return this.toRenderTarget().frameBufferId;
+        return VeilRenderSystem.getFramebufferId(this.toRenderTarget());
     }
 
     @Override
@@ -133,12 +131,12 @@ public abstract class VanillaAdvancedFboWrapper implements AdvancedFbo {
             return false;
         }
 
-        int depthTextureId = renderTarget.getDepthTextureId();
+        int depthTextureId = VeilRenderSystem.getDepthTextureId(renderTarget);
         if (this.depthTextureCache == depthTextureId) {
             return this.hasStencil;
         }
 
-        this.depthTextureCache = renderTarget.getDepthTextureId();
+        this.depthTextureCache = depthTextureId;
         GlStateManager._bindTexture(depthTextureId);
         int format = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT);
         return this.hasStencil = (format == GL_DEPTH_STENCIL || format == GL_DEPTH24_STENCIL8 || format == GL_DEPTH32F_STENCIL8);

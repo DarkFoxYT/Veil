@@ -21,13 +21,12 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.CoreShaderRegistrationCallback;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.commands.arguments.coordinates.WorldCoordinates;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
@@ -49,12 +48,11 @@ public class VeilFabricClient implements ClientModInitializer {
             KeyBindingHelper.registerKeyBinding(VeilImGuiCompat.EDITOR_KEY);
         }
 
-        CoreShaderRegistrationCallback.EVENT.register(context -> VeilVanillaShaders.registerShaders(context::register));
         VeilReloadListeners.registerListeners((type, id, listener) -> ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new FabricReloadListener(Veil.veilPath(id), listener)));
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
             LiteralArgumentBuilder<FabricClientCommandSource> builder = LiteralArgumentBuilder.literal("quasar");
-            builder.then(ClientCommandManager.argument("emitter", ResourceLocationArgument.id()).suggests(QuasarParticles.emitterSuggestionProvider()).then(ClientCommandManager.argument("position", Vec3Argument.vec3()).executes(ctx -> {
-                ResourceLocation id = ctx.getArgument("emitter", ResourceLocation.class);
+            builder.then(ClientCommandManager.argument("emitter", IdentifierArgument.id()).suggests(QuasarParticles.emitterSuggestionProvider()).then(ClientCommandManager.argument("position", Vec3Argument.vec3()).executes(ctx -> {
+                Identifier id = ctx.getArgument("emitter", Identifier.class);
 
                 FabricClientCommandSource source = ctx.getSource();
                 ParticleSystemManager particleManager = VeilRenderSystem.renderer().getParticleManager();
@@ -65,7 +63,8 @@ public class VeilFabricClient implements ClientModInitializer {
                 }
 
                 WorldCoordinates coordinates = ctx.getArgument("position", WorldCoordinates.class);
-                Vec3 pos = coordinates.getPosition(source.getEntity().createCommandSourceStack());
+                Vec3 base = source.getPosition();
+                Vec3 pos = new Vec3(coordinates.x().get(base.x), coordinates.y().get(base.y), coordinates.z().get(base.z));
                 instance.setPosition(pos.x, pos.y, pos.z);
                 particleManager.addParticleSystem(instance);
                 source.sendFeedback(Component.literal("Spawned " + id));
@@ -74,7 +73,7 @@ public class VeilFabricClient implements ClientModInitializer {
             dispatcher.register(builder);
 
             if (Veil.platform().isDevelopmentEnvironment()) {
-                ResourceLocation bufferId = Veil.veilPath("forced");
+                Identifier bufferId = Veil.veilPath("forced");
                 LiteralArgumentBuilder<FabricClientCommandSource> debugBuilder = LiteralArgumentBuilder.literal("veilc");
                 debugBuilder.then(ClientCommandManager.literal("buffers")
                         .then(ClientCommandManager.literal("enable")

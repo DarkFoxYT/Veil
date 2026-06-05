@@ -7,12 +7,12 @@ import foundry.veil.api.resource.VeilResourceInfo;
 import foundry.veil.api.resource.VeilResourceManager;
 import foundry.veil.impl.resource.action.ModelInspectAction;
 import foundry.veil.impl.resource.action.TextEditAction;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.ModelManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
@@ -35,13 +35,11 @@ public record BlockModelResource(VeilResourceInfo resourceInfo) implements VeilT
 
     @Override
     public void hotReload(VeilResourceManager resourceManager) throws IOException {
-        ResourceLocation location = this.resourceInfo.location();
+        Identifier location = this.resourceInfo.location();
         ResourceManager resources = resourceManager.resources(this.resourceInfo);
         Minecraft client = Minecraft.getInstance();
         ModelManager modelManager = client.getModelManager();
-        ProfilerFiller profiler = client.getProfiler();
-
-        modelManager.reload(CompletableFuture::completedFuture, resources, profiler, profiler, Util.backgroundExecutor(), client)
+        modelManager.reload(new PreparableReloadListener.SharedState(resources), Util.backgroundExecutor(), CompletableFuture::completedFuture, client)
                 .thenAcceptAsync(unused -> VeilRenderSystem.rebuildChunks(), client)
                 .exceptionally(e -> {
                     while (e instanceof CompletionException) {

@@ -1,0 +1,13 @@
+{
+  "max_lifetime": 36,
+  "loop": false,
+  "rate": 1,
+  "count": 36,
+  "max_particles": 256,
+  "emitter_settings": {
+    "shape": "veil:examples/spark_burst",
+    "particle_settings": "veil:examples/spark_burst",
+    "force_spawn": true
+  },
+  "particle_data": "veil:examples/spark_burst"
+}

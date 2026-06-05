@@ -15,7 +15,7 @@ import foundry.veil.impl.client.render.shader.program.ShaderProgramImpl;
 import gg.moonflower.molangcompiler.api.MolangRuntime;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -30,8 +30,8 @@ import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
  */
 public final class CompositePostPipeline implements PostPipeline {
 
-    private static final Codec<Map<ResourceLocation, FramebufferDefinition>> FRAMEBUFFER_CODEC = Codec.unboundedMap(
-            Codec.STRING.xmap(name -> ResourceLocation.fromNamespaceAndPath("temp", name), ResourceLocation::getPath),
+    private static final Codec<Map<Identifier, FramebufferDefinition>> FRAMEBUFFER_CODEC = Codec.unboundedMap(
+            Codec.STRING.xmap(name -> Identifier.fromNamespaceAndPath("temp", name), Identifier::getPath),
             FramebufferDefinition.CODEC);
     public static final Codec<CompositePostPipeline> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             PostPipeline.CODEC.listOf().fieldOf("stages").forGetter(pipeline -> Arrays.asList(pipeline.getStages())),
@@ -50,9 +50,9 @@ public final class CompositePostPipeline implements PostPipeline {
     private final PostPipeline[] stages;
     private final Map<String, ShaderTextureSource> textureSources;
     private final Map<String, ShaderProgramImpl.ShaderTexture> samplers;
-    private final Map<ResourceLocation, FramebufferDefinition> framebufferDefinitions;
+    private final Map<Identifier, FramebufferDefinition> framebufferDefinitions;
     private final VeilRenderLevelStageEvent.Stage renderStage;
-    private final Map<ResourceLocation, AdvancedFbo> framebuffers;
+    private final Map<Identifier, AdvancedFbo> framebuffers;
     private final Map<String, ShaderUniformAccess> uniforms;
     private final DynamicBufferType[] dynamicBuffers;
     private final int dynamicBuffersMask;
@@ -62,7 +62,7 @@ public final class CompositePostPipeline implements PostPipeline {
     private int screenWidth = -1;
     private int screenHeight = -1;
 
-    private CompositePostPipeline(PostPipeline[] stages, Map<String, ShaderTextureSource> samplers, Map<ResourceLocation, FramebufferDefinition> framebufferDefinitions, @Nullable VeilRenderLevelStageEvent.Stage renderStage, int dynamicBuffers, int priority, boolean replace) {
+    private CompositePostPipeline(PostPipeline[] stages, Map<String, ShaderTextureSource> samplers, Map<Identifier, FramebufferDefinition> framebufferDefinitions, @Nullable VeilRenderLevelStageEvent.Stage renderStage, int dynamicBuffers, int priority, boolean replace) {
         this.stages = stages;
         this.textureSources = Collections.unmodifiableMap(samplers);
         this.samplers = new Object2ObjectArrayMap<>(samplers.size());
@@ -90,7 +90,7 @@ public final class CompositePostPipeline implements PostPipeline {
      * @param renderStage            The stage in the renderer the pipeline should be applied at
      * @param dynamicBuffers         A bit field of all enabled dynamic buffers for this pipeline
      */
-    public CompositePostPipeline(PostPipeline[] stages, Map<String, ShaderTextureSource> samplers, Map<ResourceLocation, FramebufferDefinition> framebufferDefinitions, @Nullable VeilRenderLevelStageEvent.Stage renderStage, int dynamicBuffers) {
+    public CompositePostPipeline(PostPipeline[] stages, Map<String, ShaderTextureSource> samplers, Map<Identifier, FramebufferDefinition> framebufferDefinitions, @Nullable VeilRenderLevelStageEvent.Stage renderStage, int dynamicBuffers) {
         this(stages, samplers, framebufferDefinitions, renderStage, dynamicBuffers, 1000, false);
     }
 
@@ -220,7 +220,7 @@ public final class CompositePostPipeline implements PostPipeline {
     /**
      * @return The framebuffers created for the child stages to access
      */
-    public Map<ResourceLocation, FramebufferDefinition> getFramebuffers() {
+    public Map<Identifier, FramebufferDefinition> getFramebuffers() {
         return this.framebufferDefinitions;
     }
 

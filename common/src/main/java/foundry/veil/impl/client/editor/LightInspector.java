@@ -17,7 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.DebugEntityNameGenerator;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -62,7 +62,7 @@ public class LightInspector extends SingleWindowInspector {
             this.selectedTab = this.lightTypes.getFirst();
         }
 
-        LightTypeRegistry.LightType<?> lightType = LightTypeRegistry.REGISTRY.get(this.selectedTab);
+        LightTypeRegistry.LightType<?> lightType = LightTypeRegistry.REGISTRY.get(this.selectedTab).map(reference -> reference.value()).orElse(null);
         ImGui.beginDisabled(lightType == null || lightType.debugLightFactory() == null);
         if (ImGui.button(ADD.getString()) && lightType != null && lightType.debugLightFactory() != null) {
             LightTypeRegistry.DebugLightFactory factory = lightType.debugLightFactory();
@@ -72,7 +72,7 @@ public class LightInspector extends SingleWindowInspector {
         }
         ImGui.endDisabled();
         if (ImGui.isItemHovered(ImGuiHoveredFlags.None)) {
-            VeilImGuiUtil.setTooltip(Component.translatable("inspector.veil.light.button.add.desc", this.selectedTab.location().toString()));
+            VeilImGuiUtil.setTooltip(Component.translatable("inspector.veil.light.button.add.desc", this.selectedTab.identifier().toString()));
         }
 
         ImGui.sameLine();
@@ -84,7 +84,7 @@ public class LightInspector extends SingleWindowInspector {
         }
         ImGui.endDisabled();
         if (ImGui.isItemHovered(ImGuiHoveredFlags.None)) {
-            VeilImGuiUtil.setTooltip(Component.translatable("inspector.veil.light.button.remove.desc", this.selectedTab.location().toString()));
+            VeilImGuiUtil.setTooltip(Component.translatable("inspector.veil.light.button.remove.desc", this.selectedTab.identifier().toString()));
         }
 
         ImGui.sameLine();
@@ -97,11 +97,12 @@ public class LightInspector extends SingleWindowInspector {
 
         ImGui.beginTabBar("##lights");
         for (ResourceKey<LightTypeRegistry.LightType<?>> key : this.lightTypes) {
-            ResourceLocation id = key.location();
+            Identifier id = key.identifier();
             if (ImGui.beginTabItem(id.toString())) {
                 this.selectedTab = key;
                 int i = 0;
-                List<? extends LightRenderHandle<?>> lightData = List.copyOf(lightRenderer.getLights(LightTypeRegistry.REGISTRY.get(key)));
+                LightTypeRegistry.LightType<?> tabLightType = LightTypeRegistry.REGISTRY.get(key).map(reference -> reference.value()).orElse(null);
+                List<? extends LightRenderHandle<?>> lightData = tabLightType == null ? List.of() : List.copyOf(lightRenderer.getLights(tabLightType));
                 for (LightRenderHandle<?> handle : lightData) {
                     ImGui.pushID("light" + i);
                     renderLightComponents(handle);
@@ -118,7 +119,7 @@ public class LightInspector extends SingleWindowInspector {
     public void onShow() {
         super.onShow();
         this.lightTypes.clear();
-        this.lightTypes.addAll(LightTypeRegistry.REGISTRY.registryKeySet().stream().sorted(Comparator.comparing(ResourceKey::location)).toList());
+        this.lightTypes.addAll(LightTypeRegistry.REGISTRY.registryKeySet().stream().sorted(Comparator.comparing(ResourceKey::identifier)).toList());
     }
 
     private static void renderLightComponents(LightRenderHandle<?> handle) {

@@ -11,7 +11,7 @@ import imgui.ImGui;
 import imgui.flag.ImGuiSelectableFlags;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import org.jetbrains.annotations.ApiStatus;
@@ -50,7 +50,7 @@ public class ResourceOverrideEditor implements ResourceFileEditor<VeilResource<?
                 continue;
             }
 
-            ResourceLocation location = this.veilResource.resourceInfo().location();
+            Identifier location = this.veilResource.resourceInfo().location();
             for (Path devRoot : packRoots) {
                 this.options.add(devRoot.resolve(PackType.CLIENT_RESOURCES.getDirectory())
                         .resolve(location.getNamespace())
@@ -75,7 +75,7 @@ public class ResourceOverrideEditor implements ResourceFileEditor<VeilResource<?
 
         VeilResourceManager resourceManager = this.environment.getResourceManager();
         for (Path writePath : this.options) {
-            if (ImGui.selectable(writePath.toString(), false, ImGuiSelectableFlags.AllowItemOverlap)) {
+            if (ImGui.selectable(writePath.toString(), false, ImGuiSelectableFlags.AllowOverlap)) {
                 Veil.LOGGER.info("Writing to {}", writePath);
 
                 VeilResourceInfo info = this.veilResource.resourceInfo();

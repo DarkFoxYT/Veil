@@ -9,8 +9,6 @@
   ],
   "client": [
     "accessor.ResourceAtlasSetAccessor",
-    "accessor.ResourceModelManagerAccessor",
-    "accessor.ResourceTextureAtlasAccessor",
     "client.ResourceTextureAtlasHolderMixin",
     "client.ResourceTextureAtlasMixin"
   ],

@@ -14,10 +14,10 @@ import imgui.ImGui;
 import imgui.flag.ImGuiCol;
 import imgui.type.ImBoolean;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -38,10 +38,10 @@ import java.util.function.Predicate;
  */
 public class EditorManager implements VeilEditorEnvironment, PreparableReloadListener {
 
-    public static final ResourceLocation DEFAULT_FONT = Veil.veilPath("jetbrains_mono");
+    public static final Identifier DEFAULT_FONT = Veil.veilPath("jetbrains_mono");
 
     private final Map<Inspector, ImBoolean> editors;
-    private final Map<ResourceLocation, ResourceFileEditor<?>> resourceFileEditors;
+    private final Map<Identifier, ResourceFileEditor<?>> resourceFileEditors;
     private boolean enabled;
     private boolean registered;
 
@@ -65,15 +65,13 @@ public class EditorManager implements VeilEditorEnvironment, PreparableReloadLis
             this.registered = true;
             VeilClient.clientPlatform().onRegisterInspectors(new EditorRegistry(this));
             this.reload(
-                    CompletableFuture::completedFuture,
-                    Minecraft.getInstance().getResourceManager(),
-                    InactiveProfiler.INSTANCE,
-                    InactiveProfiler.INSTANCE,
+                    new PreparableReloadListener.SharedState(Minecraft.getInstance().getResourceManager()),
                     Util.backgroundExecutor(),
+                    CompletableFuture::completedFuture,
                     Minecraft.getInstance());
         }
 
-        ImGui.pushFont(ImGuiMC.getFont(DEFAULT_FONT, false, false));
+        ImGui.pushFont(ImGuiMC.getFont(DEFAULT_FONT, false, false), 0.0F);
 
         if (ImGui.beginMainMenuBar()) {
             ImFont font = ImGui.getFont();
@@ -154,7 +152,7 @@ public class EditorManager implements VeilEditorEnvironment, PreparableReloadLis
             return;
         }
 
-        ImGui.pushFont(ImGuiMC.getFont(DEFAULT_FONT, false, false));
+        ImGui.pushFont(ImGuiMC.getFont(DEFAULT_FONT, false, false), 0.0F);
 
         for (Map.Entry<Inspector, ImBoolean> entry : this.editors.entrySet()) {
             Inspector inspector = entry.getKey();
@@ -248,7 +246,7 @@ public class EditorManager implements VeilEditorEnvironment, PreparableReloadLis
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> reload(@NotNull PreparationBarrier preparationBarrier, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller prepareProfiler, @NotNull ProfilerFiller applyProfiler, @NotNull Executor backgroundExecutor, @NotNull Executor gameExecutor) {
+    public @NotNull CompletableFuture<Void> reload(@NotNull SharedState sharedState, @NotNull Executor backgroundExecutor, @NotNull PreparationBarrier preparationBarrier, @NotNull Executor gameExecutor) {
         List<PreparableReloadListener> listeners = new ArrayList<>(this.editors.size());
         for (Inspector inspector : this.editors.keySet()) {
             if (inspector instanceof PreparableReloadListener listener) {
@@ -264,7 +262,7 @@ public class EditorManager implements VeilEditorEnvironment, PreparableReloadLis
             return preparationBarrier.wait(null);
         }
         PreparableReloadListener listener = CompositeReloadListener.of(listeners.toArray(PreparableReloadListener[]::new));
-        return listener.reload(preparationBarrier, resourceManager, prepareProfiler, applyProfiler, backgroundExecutor, gameExecutor);
+        return listener.reload(sharedState, backgroundExecutor, preparationBarrier, gameExecutor);
     }
 
     @Override

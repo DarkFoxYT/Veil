@@ -1,5 +1,7 @@
 package foundry.veil.api.client.render.post.stage;
 
+
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -21,7 +23,7 @@ public record DepthFunctionPostStage(DepthFunc func) implements PostPipeline {
 
     @Override
     public void apply(Context context) {
-        RenderSystem.depthFunc(this.func.getId());
+        GlStateManager._depthFunc(this.func.getId());
     }
 
     @Override

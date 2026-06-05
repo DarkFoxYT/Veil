@@ -5,7 +5,6 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "foundry.veil.VeilMixinPluginImpl",
   "client": [
-    "accessor.FramebufferRenderTargetAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

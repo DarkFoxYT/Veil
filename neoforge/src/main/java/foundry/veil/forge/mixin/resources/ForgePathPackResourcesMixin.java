@@ -2,7 +2,7 @@
 //
 //import foundry.veil.Veil;
 //import foundry.veil.ext.PackResourcesExtension;
-//import net.minecraft.resources.ResourceLocation;
+//import net.minecraft.resources.Identifier;
 //import net.minecraft.server.packs.PackResources;
 //import net.minecraft.server.packs.PackType;
 //import net.minecraft.server.packs.resources.IoSupplier;
@@ -46,7 +46,7 @@
 //                        String[] parts = assetPath.relativize(file).toString().replace(separator, "/").split("/", 2);
 //                        String namespace = parts.length == 1 ? "root" : parts[0];
 //                        String path = parts.length == 1 ? parts[0] : parts[1];
-//                        ResourceLocation name = ResourceLocation.tryBuild(namespace, path);
+//                        Identifier name = Identifier.tryBuild(namespace, path);
 //
 //                        if (name != null) {
 //                            consumer.accept(type, name, assetPath, file, PackResourcesExtension.findDevPath(root, file));

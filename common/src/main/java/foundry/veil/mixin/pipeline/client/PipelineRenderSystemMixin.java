@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 @Mixin(RenderSystem.class)
 public class PipelineRenderSystemMixin {
 
-    @Inject(method = "setShader", at = @At("TAIL"), remap = false)
+    @Inject(method = "setShader", at = @At("TAIL"), remap = false, require = 0)
     private static void setShader(Supplier<ShaderInstance> shader, CallbackInfo ci) {
         if (!(shader.get() instanceof ShaderProgramImpl.Wrapper)) {
             VeilRenderSystem.shaderUpdate();

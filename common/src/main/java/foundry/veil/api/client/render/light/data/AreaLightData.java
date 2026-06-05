@@ -198,9 +198,9 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
 
     @Override
     public LightData setTo(Camera camera) {
-        Vec3 pos = camera.getPosition();
+        Vec3 pos = camera.position();
         this.position.set(pos.x, pos.y, pos.z);
-        this.orientation.identity().lookAlong(camera.getLookVector().mul(-1), camera.getUpVector());
+        this.orientation.identity().lookAlong(new Vector3f(camera.forwardVector()).mul(-1.0F), camera.upVector());
         this.markDirty();
         return this;
     }

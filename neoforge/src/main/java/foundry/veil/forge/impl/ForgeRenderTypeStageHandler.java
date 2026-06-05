@@ -13,7 +13,8 @@ import foundry.veil.mixin.rendertype.accessor.RenderTypeBufferSourceAccessor;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -30,11 +31,11 @@ import java.util.*;
 @EventBusSubscriber(modid = Veil.MODID, value = Dist.CLIENT)
 public class ForgeRenderTypeStageHandler {
 
-    private static final Map<RenderLevelStageEvent.Stage, Set<RenderType>> STAGE_RENDER_TYPES = new HashMap<>();
+    private static final Map<Class<? extends RenderLevelStageEvent>, Set<RenderType>> STAGE_RENDER_TYPES = new HashMap<>();
     private static Set<RenderType> CUSTOM_BLOCK_LAYERS = Set.of();
     private static List<RenderType> BLOCK_LAYERS;
 
-    public static synchronized void register(@Nullable RenderLevelStageEvent.Stage stage, RenderType renderType) {
+    public static synchronized void register(@Nullable Class<? extends RenderLevelStageEvent> stage, RenderType renderType) {
         SequencedMap<RenderType, ByteBufferBuilder> fixedBuffers = ((RenderTypeBufferSourceAccessor) Minecraft.getInstance().renderBuffers().bufferSource()).getFixedBuffers();
         ByteBufferBuilder old = fixedBuffers.put(renderType, new ByteBufferBuilder(renderType.bufferSize()));
         if (old != null) {
@@ -48,8 +49,9 @@ public class ForgeRenderTypeStageHandler {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderLevelStageEnd(RenderLevelStageEvent event) {
-        ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
-        RenderLevelStageEvent.Stage stage = event.getStage();
+        Minecraft minecraft = Minecraft.getInstance();
+        ProfilerFiller profiler = Profiler.get();
+        Class<? extends RenderLevelStageEvent> stage = event.getClass();
 
         Set<RenderType> stages = STAGE_RENDER_TYPES.get(stage);
         if (stages != null) {
@@ -57,8 +59,8 @@ public class ForgeRenderTypeStageHandler {
             stages.forEach(renderType -> {
                 profiler.push("render_" + VeilRenderType.getName(renderType));
                 if (CUSTOM_BLOCK_LAYERS.contains(renderType)) {
-                    Vec3 pos = event.getCamera().getPosition();
-                    ((LevelRendererBlockLayerExtension) event.getLevelRenderer()).veil$drawBlockLayer(renderType, pos.x, pos.y, pos.z, event.getModelViewMatrix(), event.getProjectionMatrix());
+                    Vec3 pos = minecraft.gameRenderer.getMainCamera().position();
+                    ((LevelRendererBlockLayerExtension) event.getLevelRenderer()).veil$drawBlockLayer(renderType, pos.x, pos.y, pos.z, event.getModelViewMatrix(), minecraft.gameRenderer.getProjectionMatrix(minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false)));
                 }
                 bufferSource.endBatch(renderType);
                 profiler.pop();
@@ -66,7 +68,7 @@ public class ForgeRenderTypeStageHandler {
         }
 
         if (!VeilLevelPerspectiveRenderer.isRenderingPerspective()) {
-            VeilRenderLevelStageEvent.Stage veilStage = NeoForgeVeilEventPlatform.getVeilStage(stage);
+            VeilRenderLevelStageEvent.Stage veilStage = NeoForgeVeilEventPlatform.getVeilStage(event);
             if (veilStage != null) {
                 profiler.push("post");
                 VeilRenderSystem.renderPost(veilStage);
@@ -88,10 +90,6 @@ public class ForgeRenderTypeStageHandler {
                 blockLayers.addAll(CUSTOM_BLOCK_LAYERS);
 
                 // Assign NeoForge chunk layer ids
-                int i = base.getLast().chunkLayerId;
-                for (RenderType blockLayer : CUSTOM_BLOCK_LAYERS) {
-                    blockLayer.chunkLayerId = ++i;
-                }
             }
             BLOCK_LAYERS = blockLayers.build();
         }

@@ -11,14 +11,14 @@ import foundry.veil.impl.client.render.pipeline.AdvancedFboShard;
 import foundry.veil.impl.client.render.pipeline.FlagShards;
 import foundry.veil.impl.client.render.pipeline.PatchStateShard;
 import foundry.veil.impl.client.render.pipeline.ShaderProgramShard;
+import foundry.veil.impl.client.render.pipeline.VeilRenderTypeBuilderImpl;
 import foundry.veil.impl.client.render.shader.program.ShaderProgramImpl;
 import foundry.veil.impl.client.render.wrapper.DSAVanillaAdvancedFboWrapper;
 import foundry.veil.impl.client.render.wrapper.LegacyVanillaAdvancedFboWrapper;
 import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,13 +74,12 @@ public interface VeilRenderBridge {
     }
 
     /**
-     * Creates a render type builder helper from the specified vanilla composite state builder.
+     * Creates a render type builder helper.
      *
-     * @param builder The state builder to wrap
      * @return The render type builder
      */
-    static VeilRenderTypeBuilder create(RenderType.CompositeState.CompositeStateBuilder builder) {
-        return (VeilRenderTypeBuilder) builder;
+    static VeilRenderTypeBuilder createRenderTypeBuilder() {
+        return new VeilRenderTypeBuilderImpl();
     }
 
     /**
@@ -119,7 +118,7 @@ public interface VeilRenderBridge {
      * @param shader The name of the shader to point to.
      * @return A new shader state shard for that shader
      */
-    static RenderStateShard.ShaderStateShard shaderState(ResourceLocation shader) {
+    static RenderStateShard.ShaderStateShard shaderState(Identifier shader) {
         return new ShaderProgramShard(shader);
     }
 
@@ -129,7 +128,7 @@ public interface VeilRenderBridge {
      * @param framebuffer The framebuffer to use
      * @return A new shader state shard for that shader
      */
-    static RenderStateShard.OutputStateShard outputState(ResourceLocation framebuffer) {
+    static RenderStateShard.OutputStateShard outputState(Identifier framebuffer) {
         return new AdvancedFboShard(framebuffer, () -> VeilRenderSystem.renderer().getFramebufferManager().getFramebuffer(framebuffer));
     }
 

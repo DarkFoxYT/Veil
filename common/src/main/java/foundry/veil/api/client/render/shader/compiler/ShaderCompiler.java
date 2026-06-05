@@ -2,7 +2,7 @@ package foundry.veil.api.client.render.shader.compiler;
 
 import foundry.veil.impl.client.render.shader.compiler.CachedShaderCompiler;
 import foundry.veil.impl.client.render.shader.compiler.DirectShaderCompiler;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.NativeResource;
 
@@ -29,7 +29,7 @@ public interface ShaderCompiler extends NativeResource {
      * @throws IOException     If the file could not be found
      * @throws ShaderException If an error occurs while compiling the shader
      */
-    CompiledShader compile(int type, ResourceLocation path) throws IOException, ShaderException;
+    CompiledShader compile(int type, Identifier path) throws IOException, ShaderException;
 
     /**
      * Creates a new shader and attempts to attach the specified sources to it.
@@ -75,6 +75,6 @@ public interface ShaderCompiler extends NativeResource {
          * @return The shader source found
          * @throws FileNotFoundException If the shader source does not exist
          */
-        VeilShaderSource getShader(ResourceLocation location) throws FileNotFoundException;
+        VeilShaderSource getShader(Identifier location) throws FileNotFoundException;
     }
 }

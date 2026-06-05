@@ -3,7 +3,7 @@ package foundry.veil.api.client.render.shader.compiler;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
 import foundry.veil.api.client.render.shader.uniform.ShaderUniform;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.NativeResource;
 
@@ -22,11 +22,11 @@ import static org.lwjgl.opengl.GL20C.glDeleteShader;
  * @param includes               All shader imports included in this file
  * @author Ocelot
  */
-public record CompiledShader(@Nullable ResourceLocation sourceFile,
+public record CompiledShader(@Nullable Identifier sourceFile,
                              int id,
                              Object2IntMap<String> uniformBindings,
                              Set<String> definitionDependencies,
-                             Set<ResourceLocation> includes) implements NativeResource {
+                             Set<Identifier> includes) implements NativeResource {
 
     /**
      * Applies the additional attributes of this shader to the specified program.

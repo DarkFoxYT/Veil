@@ -1,5 +1,7 @@
 package foundry.veil.impl.client.editor;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.Veil;
 import foundry.veil.api.client.editor.SingleWindowInspector;
@@ -14,11 +16,11 @@ import foundry.veil.api.compat.IrisCompat;
 import foundry.veil.ext.iris.IrisRenderTargetExtension;
 import imgui.ImGui;
 import imgui.type.ImBoolean;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +42,7 @@ public class FramebufferInspector extends SingleWindowInspector {
     private static final Component SHOW_ALT = Component.translatable("inspector.veil.framebuffer.iris.show_alt");
     private static final Component SHOW_ALT_TOOLTIP = Component.translatable("inspector.veil.framebuffer.iris.show_alt.desc");
 
-    private final Set<ResourceLocation> framebuffers;
+    private final Set<Identifier> framebuffers;
     private final ImBoolean showAlt;
     private AdvancedFbo downloadFramebuffer;
     private IrisRenderTargetExtension downloadRenderTarget;
@@ -67,7 +69,7 @@ public class FramebufferInspector extends SingleWindowInspector {
         if (ImGui.beginTabBar("##framebuffers")) {
             // Sort ids
             this.framebuffers.addAll(renderer.getFramebufferManager().getFramebuffers().keySet());
-            for (ResourceLocation id : this.framebuffers) {
+            for (Identifier id : this.framebuffers) {
                 this.drawBuffers(id, fbo -> this.downloadFramebuffer = fbo);
             }
             if (IrisCompat.INSTANCE != null) {
@@ -75,9 +77,9 @@ public class FramebufferInspector extends SingleWindowInspector {
 
                 this.framebuffers.clear();
                 for (String name : renderTargets.keySet()) {
-                    this.framebuffers.add(ResourceLocation.fromNamespaceAndPath("iris", name));
+                    this.framebuffers.add(Identifier.fromNamespaceAndPath("iris", name));
                 }
-                for (ResourceLocation id : this.framebuffers) {
+                for (Identifier id : this.framebuffers) {
                     this.drawRenderTarget(id, renderTargets.get(id.getPath()), renderTarget -> this.downloadRenderTarget = renderTarget);
                 }
             }
@@ -155,7 +157,7 @@ public class FramebufferInspector extends SingleWindowInspector {
         }
     }
 
-    private void drawBuffers(ResourceLocation id, @Nullable Consumer<AdvancedFbo> saveCallback) {
+    private void drawBuffers(Identifier id, @Nullable Consumer<AdvancedFbo> saveCallback) {
         AdvancedFbo buffer = VeilRenderSystem.renderer().getFramebufferManager().getFramebuffer(id);
         ImGui.beginDisabled(buffer == null);
         if (ImGui.beginTabItem(id.toString())) {
@@ -175,7 +177,7 @@ public class FramebufferInspector extends SingleWindowInspector {
                     ImGui.beginGroup();
                     AdvancedFboTextureAttachment attachment = buffer.getColorTextureAttachment(i);
                     ImGui.text(getAttachmentName(i, attachment.getId(), attachment.getName()));
-                    ImGui.image(attachment.getId(), width, height, 0, 1, 1, 0, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.5F);
+                    VeilImGuiUtil.image(attachment.getId(), width, height, 0, 1, 1, 0);
                     ImGui.endGroup();
                 }
 
@@ -186,7 +188,7 @@ public class FramebufferInspector extends SingleWindowInspector {
                     ImGui.beginGroup();
                     AdvancedFboTextureAttachment attachment = buffer.getDepthTextureAttachment();
                     ImGui.text(getAttachmentName(-1, attachment.getId(), attachment.getName()));
-                    ImGui.image(attachment.getId(), width, height, 0, 1, 1, 0, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.5F);
+                    VeilImGuiUtil.image(attachment.getId(), width, height, 0, 1, 1, 0);
                     ImGui.endGroup();
                 }
 
@@ -199,7 +201,7 @@ public class FramebufferInspector extends SingleWindowInspector {
         ImGui.endDisabled();
     }
 
-    private void drawRenderTarget(ResourceLocation id, @Nullable IrisRenderTargetExtension renderTarget, @Nullable Consumer<IrisRenderTargetExtension> saveCallback) {
+    private void drawRenderTarget(Identifier id, @Nullable IrisRenderTargetExtension renderTarget, @Nullable Consumer<IrisRenderTargetExtension> saveCallback) {
         ImGui.beginDisabled(renderTarget == null);
         if (ImGui.beginTabItem(id.toString())) {
             ImGui.checkbox(SHOW_ALT.getString(), this.showAlt);
@@ -213,7 +215,7 @@ public class FramebufferInspector extends SingleWindowInspector {
                 int texture = this.showAlt.get() ? renderTarget.veil$getAltTexture() : renderTarget.veil$getMainTexture();
                 ImGui.beginGroup();
                 ImGui.text(getAttachmentName(0, texture, this.showAlt.get() ? "Alt" : "Main"));
-                ImGui.image(texture, width, height, 0, 1, 1, 0, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.5F);
+                VeilImGuiUtil.image(texture, width, height, 0, 1, 1, 0);
                 ImGui.endGroup();
 
                 if (saveCallback != null && ImGui.button(SAVE.getString(), ImGui.getContentRegionAvailX() - 4, 0)) {
@@ -226,7 +228,7 @@ public class FramebufferInspector extends SingleWindowInspector {
     }
 
     private static String getAttachmentName(int index, int id, @Nullable String name) {
-        RenderSystem.bindTexture(id);
+        GlStateManager._bindTexture(id);
         StringBuilder attachmentName = new StringBuilder(name != null ? name : index == -1 ? I18n.get("inspector.veil.framebuffer.depth_attachment") : (I18n.get("inspector.veil.framebuffer.color_attachment", index)));
 
         int internalFormat = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT);

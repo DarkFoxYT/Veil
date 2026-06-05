@@ -1,0 +1,13 @@
+{
+  "max_lifetime": 42,
+  "loop": false,
+  "rate": 1,
+  "count": 28,
+  "max_particles": 192,
+  "emitter_settings": {
+    "shape": "veil:examples/cube_pop",
+    "particle_settings": "veil:examples/cube_pop",
+    "force_spawn": true
+  },
+  "particle_data": "veil:examples/cube_pop"
+}

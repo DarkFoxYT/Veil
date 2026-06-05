@@ -24,7 +24,7 @@ public class DefaultFluidRendererMixin {
     @Final
     private ChunkVertexEncoder.Vertex[] vertices;
 
-    @Inject(method = "writeQuad", at = @At(value = "INVOKE", target = "Lnet/caffeinemc/mods/sodium/client/model/quad/ModelQuadView;getTexV(I)F"), remap = false)
+    @Inject(method = "writeQuad", at = @At(value = "INVOKE", target = "Lnet/caffeinemc/mods/sodium/client/model/quad/ModelQuadView;getTexV(I)F"), remap = false, require = 0)
     public void bufferNormal(ChunkModelBuilder builder, TranslucentGeometryCollector collector, Material material, BlockPos offset, ModelQuadView quad, ModelQuadFacing facing, boolean flip, CallbackInfo ci, @Local(ordinal = 0) int i) {
         ChunkVertexEncoder.Vertex out = this.vertices[flip ? 3 - i + 1 & 3 : i];
         ((ChunkVertexEncoderVertexExtension) out).veil$setNormal(quad.getFaceNormal());

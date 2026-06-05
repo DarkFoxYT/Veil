@@ -1,5 +1,6 @@
 package foundry.veil.forge.mixin.compat.iris;
 
+import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.ext.iris.IrisRenderingPipelineExtension;
 import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
@@ -34,7 +35,7 @@ public class IrisRenderingPipelineMixin implements IrisRenderingPipelineExtensio
             }
             this.veil$simpleFbo = AdvancedFbo.withSize(mainColorBuffer.getWidth(), mainColorBuffer.getHeight())
                     .addColorTextureWrapper(mainColorBuffer.getMainTexture())
-                    .setDepthTextureWrapper(this.renderTargets.getDepthTexture())
+                    .setDepthTextureWrapper(VeilRenderSystem.getTextureId(this.renderTargets.getDepthTexture()))
                     .build(true);
         }
         this.veil$simpleFbo.bind(false);

@@ -7,7 +7,7 @@ import foundry.veil.api.client.registry.PostPipelineStageRegistry;
 import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.framebuffer.FramebufferManager;
 import foundry.veil.api.client.render.post.PostPipeline;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Objects;
 
@@ -43,7 +43,7 @@ public class CopyPostStage extends FramebufferPostStage {
      * @param copyDepth Whether to copy the depth buffers
      * @param linear    Whether to copy with a linear filter if the input size doesn't match the output size
      */
-    public CopyPostStage(ResourceLocation in, ResourceLocation out, boolean copyColor, boolean copyDepth, boolean linear) {
+    public CopyPostStage(Identifier in, Identifier out, boolean copyColor, boolean copyDepth, boolean linear) {
         super(in, out, false);
         this.mask = (copyColor ? GL_COLOR_BUFFER_BIT : 0) | (copyDepth ? GL_DEPTH_BUFFER_BIT : 0);
         this.filter = linear ? GL_LINEAR : GL_NEAREST;
@@ -64,7 +64,7 @@ public class CopyPostStage extends FramebufferPostStage {
     }
 
     @Override
-    public ResourceLocation getIn() {
+    public Identifier getIn() {
         return Objects.requireNonNull(super.getIn());
     }
 

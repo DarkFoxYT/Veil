@@ -8,7 +8,7 @@ import io.github.ocelot.glslprocessor.api.node.GlslTree;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import org.apache.commons.io.IOUtils;
 
@@ -24,10 +24,10 @@ public class ShaderImporterImpl implements ShaderImporter {
     private static final String DEPRECATED_MARKER = "#veil:deprecated";
 
     private final ResourceProvider resourceProvider;
-    private final ObjectSet<ResourceLocation> failedImports;
-    private final ObjectSet<ResourceLocation> addedImports;
-    private final ObjectSet<ResourceLocation> addedImportsView;
-    private final Map<ResourceLocation, String> imports;
+    private final ObjectSet<Identifier> failedImports;
+    private final ObjectSet<Identifier> addedImports;
+    private final ObjectSet<Identifier> addedImportsView;
+    private final Map<Identifier, String> imports;
 
     /**
      * Creates a new import processor that loads import files from the specified resource provider.
@@ -47,7 +47,7 @@ public class ShaderImporterImpl implements ShaderImporter {
     }
 
     @Override
-    public GlslTree loadImport(ShaderPreProcessor.Context context, ResourceLocation name, boolean force) throws IOException {
+    public GlslTree loadImport(ShaderPreProcessor.Context context, Identifier name, boolean force) throws IOException {
         if (this.failedImports.contains(name)) {
             throw new IOException("Import previously failed to load");
         }
@@ -88,7 +88,7 @@ public class ShaderImporterImpl implements ShaderImporter {
     }
 
     @Override
-    public Set<ResourceLocation> addedImports() {
+    public Set<Identifier> addedImports() {
         return this.addedImportsView;
     }
 }

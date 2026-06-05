@@ -11,7 +11,7 @@ import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiDragDropFlags;
 import imgui.flag.ImGuiStyleVar;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.ApiStatus;
 

@@ -6,8 +6,9 @@ import foundry.veil.api.resource.VeilResourceInfo;
 import foundry.veil.api.resource.VeilResourceManager;
 import foundry.veil.impl.resource.action.ShellInspectAction;
 import foundry.veil.impl.resource.action.TextEditAction;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.util.profiling.InactiveProfiler;
 
 import java.io.IOException;
@@ -28,7 +29,7 @@ public record ShellResource(VeilResourceInfo resourceInfo) implements VeilTextRe
 
     @Override
     public void hotReload(VeilResourceManager resourceManager) throws IOException {
-        VeilRenderSystem.renderer().getEffectManager().getShellManager().reload(CompletableFuture::completedFuture, resourceManager.resources(this.resourceInfo), InactiveProfiler.INSTANCE, InactiveProfiler.INSTANCE, Util.backgroundExecutor(), Minecraft.getInstance());
+        VeilRenderSystem.renderer().getEffectManager().getShellManager().reload(new PreparableReloadListener.SharedState(resourceManager.resources(this.resourceInfo)), Util.backgroundExecutor(), CompletableFuture::completedFuture, Minecraft.getInstance());
     }
 
     @Override

@@ -14,7 +14,7 @@ import foundry.veil.api.client.render.post.PostPipeline;
 import foundry.veil.api.client.render.post.uniform.UniformValue;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
 import foundry.veil.api.client.render.shader.uniform.ShaderUniformAccess;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -29,7 +29,7 @@ import java.util.Optional;
 public class BlitPostStage extends FramebufferPostStage {
 
     public static final MapCodec<BlitPostStage> CODEC = RecordCodecBuilder.<BlitPostStage>mapCodec(instance -> instance.group(
-                    ResourceLocation.CODEC.fieldOf("shader").forGetter(BlitPostStage::getShaderId),
+                    Identifier.CODEC.fieldOf("shader").forGetter(BlitPostStage::getShaderId),
                     Codec.unboundedMap(Codec.STRING, UniformValue.CODEC).optionalFieldOf("uniforms", Collections.emptyMap()).forGetter(BlitPostStage::getUniforms),
                     FramebufferManager.FRAMEBUFFER_CODEC.optionalFieldOf("in").forGetter(stage -> Optional.ofNullable(stage.getIn())),
                     FramebufferManager.FRAMEBUFFER_CODEC.optionalFieldOf("out", VeilFramebuffers.POST).forGetter(BlitPostStage::getOut),
@@ -42,7 +42,7 @@ public class BlitPostStage extends FramebufferPostStage {
                 return DataResult.success(stage);
             }, DataResult::success);
 
-    private final ResourceLocation shader;
+    private final Identifier shader;
     private final Map<String, UniformValue> uniforms;
     private boolean printedError;
 
@@ -55,7 +55,7 @@ public class BlitPostStage extends FramebufferPostStage {
      * @param out    The framebuffer to write into
      * @param clear  Whether to clear the output before drawing
      */
-    public BlitPostStage(ResourceLocation shader, Map<String, UniformValue> uniforms, @Nullable ResourceLocation in, ResourceLocation out, boolean clear) {
+    public BlitPostStage(Identifier shader, Map<String, UniformValue> uniforms, @Nullable Identifier in, Identifier out, boolean clear) {
         super(in, out, clear);
         this.shader = shader;
         this.uniforms = uniforms;
@@ -145,7 +145,7 @@ public class BlitPostStage extends FramebufferPostStage {
     /**
      * @return The name of the shader this stage should use
      */
-    public ResourceLocation getShaderId() {
+    public Identifier getShaderId() {
         return this.shader;
     }
 

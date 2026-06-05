@@ -6,7 +6,6 @@
   "plugin": "foundry.veil.VeilMixinPluginImpl",
   "client": [
     "accessor.GameRendererAccessor",
-    "accessor.LevelRendererAccessor",
     "client.FrustumMixin"
   ],
   "injectors": {

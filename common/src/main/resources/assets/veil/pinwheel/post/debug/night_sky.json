@@ -1,0 +1,52 @@
+{
+  "stages": [
+    {
+      "type": "veil:blit",
+      "shader": "veil:debug/night_sky",
+      "in": "minecraft:main",
+      "out": "veil:night_sky",
+      "clear": false,
+      "uniforms": {
+        "Time": {
+          "type": "float",
+          "value": [0.0]
+        },
+        "NightStrength": {
+          "type": "float",
+          "value": [1.0]
+        },
+        "SkyStrength": {
+          "type": "float",
+          "value": [1.0]
+        },
+        "StarDensity": {
+          "type": "float",
+          "value": [0.982]
+        },
+        "ColorStrength": {
+          "type": "float",
+          "value": [1.0]
+        },
+        "MeteorStrength": {
+          "type": "float",
+          "value": [0.35]
+        }
+      }
+    },
+    {
+      "type": "veil:blit",
+      "shader": "veil:blit_screen",
+      "in": "veil:night_sky",
+      "out": "veil:post",
+      "clear": false
+    }
+  ],
+  "renderStage": "after_level",
+  "priority": 50,
+  "textures": {
+    "MoonSampler": {
+      "type": "location",
+      "location": "minecraft:textures/environment/moon_phases.png"
+    }
+  }
+}

@@ -7,7 +7,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.javafmlmod.FMLModContainer;
@@ -29,7 +29,7 @@ public class NeoForgeRegistrationFactory implements RegistrationProvider.Factory
         }
 
         DeferredRegister<T> register = DeferredRegister.create(resourceKey, modId);
-        if (!BuiltInRegistries.REGISTRY.containsKey(resourceKey.location())) {
+        if (!BuiltInRegistries.REGISTRY.containsKey(resourceKey.identifier())) {
             register.makeRegistry(builder -> builder.sync(false));
         }
         register.register(Objects.requireNonNull(forgeContainer.getEventBus()));
@@ -60,7 +60,7 @@ public class NeoForgeRegistrationFactory implements RegistrationProvider.Factory
 
         @SuppressWarnings("unchecked")
         @Override
-        public <I extends T> RegistryObject<I> register(ResourceLocation id, Supplier<? extends I> supplier) {
+        public <I extends T> RegistryObject<I> register(Identifier id, Supplier<? extends I> supplier) {
             DeferredHolder<I, I> obj = (DeferredHolder<I, I>) ((DeferredRegisterExtensions<T>) this.registry).register(id, supplier);
             RegistryObject<I> ro = new NeoForgeRegistryObject<>(obj);
             this.entries.add((RegistryObject<T>) ro);

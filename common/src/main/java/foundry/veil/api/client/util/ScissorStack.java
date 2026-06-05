@@ -1,6 +1,6 @@
 package foundry.veil.api.client.util;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.util.Mth;
@@ -24,7 +24,8 @@ public final class ScissorStack {
     }
 
     private void apply(ScreenRectangle rectangle) {
-        RenderSystem.enableScissor(
+        GlStateManager._enableScissorTest();
+        GlStateManager._scissorBox(
                 rectangle.left(),
                 Minecraft.getInstance().getWindow().getHeight() - rectangle.bottom(),
                 rectangle.width(),
@@ -79,7 +80,7 @@ public final class ScissorStack {
     public void pop() {
         this.regions.pop();
         if (this.regions.isEmpty()) {
-            RenderSystem.disableScissor();
+            GlStateManager._disableScissorTest();
         } else {
             this.apply(this.regions.peek());
         }
@@ -133,6 +134,6 @@ public final class ScissorStack {
      */
     public void clear() {
         this.regions.clear();
-        RenderSystem.disableScissor();
+        GlStateManager._disableScissorTest();
     }
 }

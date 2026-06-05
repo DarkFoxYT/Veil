@@ -1,0 +1,50 @@
+{
+  "should_collide": false,
+  "face_velocity": false,
+  "velocity_stretch_factor": 0.0,
+  "init_modules": [
+    {
+      "module": "veil:lightmap",
+      "fullbright": true
+    }
+  ],
+  "forces": [
+    {
+      "module": "veil:drag",
+      "strength": 0.985
+    }
+  ],
+  "render_modules": [
+    {
+      "module": "veil:color",
+      "gradient": {
+        "rgb_points": [
+          {
+            "percent": 0.0,
+            "color": "#FFE8A3"
+          },
+          {
+            "percent": 1.0,
+            "color": "#FF7CDA"
+          }
+        ],
+        "alpha_points": [
+          {
+            "percent": 0.0,
+            "alpha": 0.65
+          },
+          {
+            "percent": 1.0,
+            "alpha": 0.0
+          }
+        ]
+      },
+      "interpolant": "q.age_percent"
+    }
+  ],
+  "sprite_data": {
+    "sprite": "veil:textures/special/blank.png"
+  },
+  "additive": true,
+  "render_style": "veil:billboard"
+}

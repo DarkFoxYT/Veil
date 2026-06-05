@@ -3,7 +3,7 @@ package foundry.veil.api.client.necromancer.render;
 import foundry.veil.api.client.necromancer.Skeleton;
 import foundry.veil.api.client.necromancer.SkeletonParent;
 import foundry.veil.api.client.render.MatrixStack;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 

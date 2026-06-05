@@ -1,8 +1,9 @@
 package foundry.veil.impl.client.render.wrapper;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.ApiStatus;
@@ -36,12 +37,15 @@ public class LegacyVanillaAdvancedFboWrapper extends VanillaAdvancedFboWrapper {
         }
 
         if ((buffers & GL_COLOR_BUFFER_BIT) != 0) {
-            RenderSystem.clearColor(red, green, blue, alpha);
+            org.lwjgl.opengl.GL11C.glClearColor(red, green, blue, alpha);
         }
         if ((buffers & GL_DEPTH_BUFFER_BIT) != 0) {
-            RenderSystem.clearDepth(depth);
+            org.lwjgl.opengl.GL11C.glClearDepth(depth);
         }
-        RenderSystem.clear(buffers, Minecraft.ON_OSX);
+        GlStateManager._clear(buffers);
+        if (net.minecraft.util.Util.getPlatform() == net.minecraft.util.Util.OS.OSX) {
+            glGetError();
+        }
 
         if (old != id) {
             GlStateManager._glBindFramebuffer(GL_FRAMEBUFFER, old);
@@ -80,7 +84,7 @@ public class LegacyVanillaAdvancedFboWrapper extends VanillaAdvancedFboWrapper {
         int oldDraw = glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING);
 
         this.bindRead();
-        GlStateManager._glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target.frameBufferId);
+        GlStateManager._glBindFramebuffer(GL_DRAW_FRAMEBUFFER, VeilRenderSystem.getFramebufferId(target));
         glBlitFramebuffer(0, 0, this.getWidth(), this.getHeight(), 0, 0, target.width, target.height, mask, filtering);
 
         GlStateManager._glBindFramebuffer(GL_READ_FRAMEBUFFER, oldRead);

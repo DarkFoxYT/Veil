@@ -6,8 +6,6 @@
   "plugin": "foundry.veil.VeilMixinPluginImpl",
   "client": [
     "client.ShaderEffectInstanceMixin",
-    "client.ShaderGameRendererMixin",
-    "client.ShaderInstanceMixin",
     "client.ShaderProgramManagerMixin"
   ],
   "injectors": {

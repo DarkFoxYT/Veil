@@ -15,7 +15,7 @@ import foundry.veil.api.util.CodecUtil;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +29,7 @@ public final class FlareMaterial {
 
     public static Codec<FlareMaterial> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("class").forGetter(FlareMaterial::clazz),
-            ResourceLocation.CODEC.fieldOf("renderType").forGetter(FlareMaterial::renderTypeLocation),
+            Identifier.CODEC.fieldOf("renderType").forGetter(FlareMaterial::renderTypeLocation),
             Codec.BOOL.optionalFieldOf("randomizeSeed", false).forGetter(FlareMaterial::randomizeSeed),
             Codec.unboundedMap(
                             Codec.STRING,
@@ -42,11 +42,11 @@ public final class FlareMaterial {
     ).apply(instance, (clazz, renderType, randomizeSeed, properties) -> new FlareMaterial(clazz, renderType, randomizeSeed, new Object2ObjectArrayMap<>(properties))));
 
     private final String clazz;
-    private final ResourceLocation renderTypeLocation;
+    private final Identifier renderTypeLocation;
     private final boolean randomizeSeed;
     private final Object2ObjectArrayMap<String, Property<?>> properties;
 
-    public FlareMaterial(String clazz, ResourceLocation renderTypeLocation, boolean randomizeSeed, Map<String, Property<?>> properties) {
+    public FlareMaterial(String clazz, Identifier renderTypeLocation, boolean randomizeSeed, Map<String, Property<?>> properties) {
         properties.put("_ClipBrightness", new FloatProperty(1.0f));
         if (randomizeSeed) {
             properties.put("_Seed", RandomFloatProperty.INSTANCE);
@@ -98,7 +98,7 @@ public final class FlareMaterial {
         return this.clazz;
     }
     
-    public ResourceLocation renderTypeLocation() {
+    public Identifier renderTypeLocation() {
         return this.renderTypeLocation;
     }
     

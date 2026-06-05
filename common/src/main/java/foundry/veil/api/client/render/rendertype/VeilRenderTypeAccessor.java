@@ -4,10 +4,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.impl.client.render.pipeline.ShaderProgramShard;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11C;
@@ -90,7 +91,7 @@ public interface VeilRenderTypeAccessor {
     /**
      * @return The outline property state
      */
-    RenderType.OutlineProperty outlineProperty();
+    RenderSetup.OutlineProperty outlineProperty();
 
     /**
      * @return An immutable view of all states in the render type
@@ -101,7 +102,7 @@ public interface VeilRenderTypeAccessor {
      * @return The Veil shader location in this shard or <code>null</code> if not defined or a vanilla shader
      * @since 3.3.0
      */
-    default @Nullable ResourceLocation veilShaderId() {
+    default @Nullable Identifier veilShaderId() {
         if (this.shaderState() instanceof ShaderProgramShard shard) {
             return shard.getShader();
         }

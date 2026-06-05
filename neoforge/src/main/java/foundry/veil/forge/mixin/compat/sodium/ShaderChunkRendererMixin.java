@@ -16,7 +16,7 @@ import net.caffeinemc.mods.sodium.client.render.chunk.ShaderChunkRenderer;
 import net.caffeinemc.mods.sodium.client.render.chunk.shader.ChunkShaderInterface;
 import net.caffeinemc.mods.sodium.client.render.chunk.shader.ChunkShaderOptions;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.spongepowered.asm.mixin.Final;
@@ -56,11 +56,11 @@ public abstract class ShaderChunkRendererMixin implements ShaderChunkRendererExt
     private int veil$activeBuffers;
 
     @Unique
-    private static final Map<ShaderType, ResourceLocation> SHADERS = Map.of(
+    private static final Map<ShaderType, Identifier> SHADERS = Map.of(
             ShaderType.VERTEX,
-            ResourceLocation.fromNamespaceAndPath("sodium", "blocks/block_layer_opaque.vsh"),
+            Identifier.fromNamespaceAndPath("sodium", "blocks/block_layer_opaque.vsh"),
             ShaderType.FRAGMENT,
-            ResourceLocation.fromNamespaceAndPath("sodium", "blocks/block_layer_opaque.fsh")
+            Identifier.fromNamespaceAndPath("sodium", "blocks/block_layer_opaque.fsh")
     );
 
     @Inject(method = "delete", at = @At("HEAD"), remap = false)
@@ -76,8 +76,8 @@ public abstract class ShaderChunkRendererMixin implements ShaderChunkRendererExt
         ((ChunkShaderOptionsExtension) (Object) options).veil$setActiveBuffers(this.veil$activeBuffers);
     }
 
-    @WrapOperation(method = "createShader", at = @At(value = "INVOKE", target = "Lnet/caffeinemc/mods/sodium/client/gl/shader/ShaderLoader;loadShader(Lnet/caffeinemc/mods/sodium/client/gl/shader/ShaderType;Lnet/minecraft/resources/ResourceLocation;Lnet/caffeinemc/mods/sodium/client/gl/shader/ShaderConstants;)Lnet/caffeinemc/mods/sodium/client/gl/shader/GlShader;", remap = true), require = 2, remap = false)
-    private GlShader createShader(ShaderType type, ResourceLocation name, ShaderConstants constants, Operation<GlShader> original) {
+    @WrapOperation(method = "createShader", at = @At(value = "INVOKE", target = "Lnet/caffeinemc/mods/sodium/client/gl/shader/ShaderLoader;loadShader(Lnet/caffeinemc/mods/sodium/client/gl/shader/ShaderType;Lnet/minecraft/resources/Identifier;Lnet/caffeinemc/mods/sodium/client/gl/shader/ShaderConstants;)Lnet/caffeinemc/mods/sodium/client/gl/shader/GlShader;", remap = true), require = 2, remap = false)
+    private GlShader createShader(ShaderType type, Identifier name, ShaderConstants constants, Operation<GlShader> original) {
         if (this.veil$shaderSource != null) {
             ShaderParser.ParsedShader source = this.veil$shaderSource.get(type);
             if (source != null) {
@@ -104,7 +104,7 @@ public abstract class ShaderChunkRendererMixin implements ShaderChunkRendererExt
             }
             return () -> {
                 Map<ShaderType, ShaderParser.ParsedShader> map = new Object2ObjectArrayMap<>();
-                for (Map.Entry<ShaderType, ResourceLocation> entry : SHADERS.entrySet()) {
+                for (Map.Entry<ShaderType, Identifier> entry : SHADERS.entrySet()) {
                     ShaderType type = entry.getKey();
                     SodiumShaderProcessor.setShaderType(type.id, entry.getValue(), glCapabilities);
                     ShaderParser.ParsedShader src = ShaderParser.parseShader(ShaderLoader.getShaderSource(entry.getValue()), pair.getSecond());

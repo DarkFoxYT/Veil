@@ -1,6 +1,6 @@
 package foundry.veil.mixin.dynamicbuffer.client;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.shaders.Program;
 import com.mojang.blaze3d.shaders.Shader;
 import com.mojang.blaze3d.shaders.Uniform;
@@ -14,7 +14,7 @@ import foundry.veil.mixin.dynamicbuffer.accessor.DynamicBufferProgramAccessor;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -141,14 +141,14 @@ public abstract class DynamicBufferShaderInstanceMixin implements Shader, Shader
         int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
         try {
-            GlStateManager.glShaderSource(vertexShader, List.of(this.veil$vertexSource));
+            GlStateManager.glShaderSource(vertexShader, this.veil$vertexSource);
             glCompileShader(vertexShader);
             if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) != GL_TRUE) {
                 String error = glGetShaderInfoLog(vertexShader).trim();
                 throw new IOException("Couldn't compile dynamic vertex program (" + this.vertexProgram.getName() + ", " + this.name + ") : " + error);
             }
 
-            GlStateManager.glShaderSource(fragmentShader, List.of(this.veil$fragmentSource));
+            GlStateManager.glShaderSource(fragmentShader, this.veil$fragmentSource);
             glCompileShader(fragmentShader);
             if (glGetShaderi(fragmentShader, GL_COMPILE_STATUS) != GL_TRUE) {
                 String error = glGetShaderInfoLog(fragmentShader).trim();
@@ -218,16 +218,15 @@ public abstract class DynamicBufferShaderInstanceMixin implements Shader, Shader
             uniform.setLocation(-1);
         }
         this.updateLocations();
-        this.markDirty();
     }
 
     @Override
-    public Collection<ResourceLocation> veil$getShaderSources() {
+    public Collection<Identifier> veil$getShaderSources() {
         // TODO probably extra code for iris/sodium needed
-        ResourceLocation vertexProgramName = ResourceLocation.parse(this.vertexProgram.getName());
-        ResourceLocation fragmentProgramName = ResourceLocation.parse(this.fragmentProgram.getName());
-        ResourceLocation vertexPath = ResourceLocation.fromNamespaceAndPath(vertexProgramName.getNamespace(), "shaders/core/" + vertexProgramName.getPath() + Program.Type.VERTEX.getExtension());
-        ResourceLocation fragmentPath = ResourceLocation.fromNamespaceAndPath(fragmentProgramName.getNamespace(), "shaders/core/" + fragmentProgramName.getPath() + Program.Type.FRAGMENT.getExtension());
+        Identifier vertexProgramName = Identifier.parse(this.vertexProgram.getName());
+        Identifier fragmentProgramName = Identifier.parse(this.fragmentProgram.getName());
+        Identifier vertexPath = Identifier.fromNamespaceAndPath(vertexProgramName.getNamespace(), "shaders/core/" + vertexProgramName.getPath() + Program.Type.VERTEX.getExtension());
+        Identifier fragmentPath = Identifier.fromNamespaceAndPath(fragmentProgramName.getNamespace(), "shaders/core/" + fragmentProgramName.getPath() + Program.Type.FRAGMENT.getExtension());
         return List.of(vertexPath, fragmentPath);
     }
 

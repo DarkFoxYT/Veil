@@ -22,7 +22,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GLCapabilities;
@@ -44,7 +44,7 @@ public class DynamicShaderProgramImpl extends ShaderProgramImpl {
     private final Int2ObjectMap<VeilShaderSource> processedShaderSources;
     private ShaderProgramImpl oldShader;
 
-    public DynamicShaderProgramImpl(ResourceLocation id, Runnable onFree) {
+    public DynamicShaderProgramImpl(Identifier id, Runnable onFree) {
         super(id);
         this.onFree = onFree;
         this.shaderSources = new Int2ObjectArrayMap<>();
@@ -63,7 +63,7 @@ public class DynamicShaderProgramImpl extends ShaderProgramImpl {
         // Fragment shaders aren't strictly necessary if the fragment output isn't used,
         // however mac shaders don't work without a fragment shader. This adds a "dummy" fragment shader
         // on mac specifically for all rendering shaders.
-        if (Minecraft.ON_OSX && !this.processedShaderSources.containsKey(GL_COMPUTE_SHADER) && !this.processedShaderSources.containsKey(GL_FRAGMENT_SHADER)) {
+        if ((net.minecraft.util.Util.getPlatform() == net.minecraft.util.Util.OS.OSX) && !this.processedShaderSources.containsKey(GL_COMPUTE_SHADER) && !this.processedShaderSources.containsKey(GL_FRAGMENT_SHADER)) {
             compiledProgram.attachShader(GL_FRAGMENT_SHADER, compiler.compile(GL_FRAGMENT_SHADER, DUMMY_FRAGMENT_SHADER));
         }
     }
@@ -152,11 +152,11 @@ public class DynamicShaderProgramImpl extends ShaderProgramImpl {
                                        Object2IntMap<String> uniformBindings,
                                        Map<String, String> macros,
                                        Set<String> definitionDependencies,
-                                       ResourceLocation name,
+                                       Identifier name,
                                        boolean sourceFile) implements ShaderPreProcessor.VeilContext {
 
         @Override
-        public GlslTree modifyInclude(@Nullable ResourceLocation name, String source) throws IOException, GlslSyntaxException, LexerException {
+        public GlslTree modifyInclude(@Nullable Identifier name, String source) throws IOException, GlslSyntaxException, LexerException {
             GlslTree tree = GlslParser.preprocessParse(source, this.macros);
             PreProcessorContext context = new PreProcessorContext(this.customProgramData, this.processor, this.activeBuffers, this.type, this.glCapabilities, this.uniformBindings, this.macros, this.definitionDependencies, name, false);
             this.processor.getImportProcessor().modify(context, tree);

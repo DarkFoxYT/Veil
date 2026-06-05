@@ -27,7 +27,7 @@ public record NeoForgeServerPacketContext(IPayloadContext context) implements Se
 
     @Override
     public void sendPacket(Packet<?> packet, @Nullable PacketSendListener callback) {
-        this.context.connection().send(packet, callback);
+        this.context.connection().send(packet, null);
     }
 
     @Override

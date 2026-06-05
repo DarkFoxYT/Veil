@@ -1,5 +1,7 @@
 package foundry.veil.api.client.render.framebuffer;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
+
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.serialization.Codec;
@@ -11,10 +13,10 @@ import gg.moonflower.molangcompiler.api.MolangEnvironment;
 import gg.moonflower.molangcompiler.api.MolangRuntime;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
-import net.minecraft.ResourceLocationException;
+import net.minecraft.IdentifierException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.FileToIdConverter;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.ApiStatus;
@@ -38,28 +40,28 @@ import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER;
  */
 public class FramebufferManager extends CodecReloadListener<FramebufferDefinition> implements NativeResource {
 
-    private static final ResourceLocation MAIN = ResourceLocation.withDefaultNamespace("main");
+    private static final Identifier MAIN = Identifier.withDefaultNamespace("main");
 
-    public static final Codec<ResourceLocation> FRAMEBUFFER_CODEC = Codec.STRING.comapFlatMap(name -> {
+    public static final Codec<Identifier> FRAMEBUFFER_CODEC = Codec.STRING.comapFlatMap(name -> {
         try {
             if (!name.contains(":")) {
-                ResourceLocation id = ResourceLocation.tryBuild("temp", name);
+                Identifier id = Identifier.tryBuild("temp", name);
                 return id != null ? DataResult.success(id) : DataResult.error(() -> "Invalid path: " + name);
             }
 
-            ResourceLocation id = ResourceLocation.tryParse(name);
+            Identifier id = Identifier.tryParse(name);
             return id != null ? DataResult.success(id) : DataResult.error(() -> "Invalid path: " + name);
-        } catch (ResourceLocationException e) {
+        } catch (IdentifierException e) {
             return DataResult.error(() -> "Not a valid resource location: " + name + ". " + e.getMessage());
         }
     }, location -> "temp".equals(location.getNamespace()) ? location.getPath() : location.toString()).stable();
     public static final FileToIdConverter FRAMEBUFFER_LISTER = FileToIdConverter.json("pinwheel/framebuffers");
 
-    private final Map<ResourceLocation, FramebufferDefinition> framebufferDefinitions;
-    private final Map<ResourceLocation, AdvancedFbo> framebuffers;
-    private final Map<ResourceLocation, AdvancedFbo> framebuffersView;
-    private final Set<ResourceLocation> screenFramebuffers;
-    private final Set<ResourceLocation> manualFramebuffers;
+    private final Map<Identifier, FramebufferDefinition> framebufferDefinitions;
+    private final Map<Identifier, AdvancedFbo> framebuffers;
+    private final Map<Identifier, AdvancedFbo> framebuffersView;
+    private final Set<Identifier> screenFramebuffers;
+    private final Set<Identifier> manualFramebuffers;
 
     /**
      * Creates a new instance of the framebuffer manager.
@@ -73,7 +75,7 @@ public class FramebufferManager extends CodecReloadListener<FramebufferDefinitio
         this.manualFramebuffers = new ObjectArraySet<>();
     }
 
-    private void initFramebuffer(ResourceLocation name, FramebufferDefinition definition, MolangEnvironment runtime) {
+    private void initFramebuffer(Identifier name, FramebufferDefinition definition, MolangEnvironment runtime) {
         try {
             AdvancedFbo fbo = definition.createBuilder(runtime)
                     .setDebugLabel(name.toString())
@@ -101,7 +103,7 @@ public class FramebufferManager extends CodecReloadListener<FramebufferDefinitio
                 .setQuery("screen_height", height)
                 .create();
 
-        for (ResourceLocation name : this.screenFramebuffers) {
+        for (Identifier name : this.screenFramebuffers) {
             FramebufferDefinition definition = this.framebufferDefinitions.get(name);
             if (definition != null) {
                 this.initFramebuffer(name, definition, runtime);
@@ -131,14 +133,14 @@ public class FramebufferManager extends CodecReloadListener<FramebufferDefinitio
      * @param name       The name of the framebuffer to set
      * @param definition The new definition
      */
-    public void setDefinition(ResourceLocation name, FramebufferDefinition definition) {
+    public void setDefinition(Identifier name, FramebufferDefinition definition) {
         Window window = Minecraft.getInstance().getWindow();
         MolangRuntime runtime = MolangRuntime.runtime()
                 .setQuery("screen_width", window.getWidth())
                 .setQuery("screen_height", window.getHeight())
                 .create();
 
-        RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 0.0F);
+        org.lwjgl.opengl.GL11C.glClearColor(0.0F, 0.0F, 0.0F, 0.0F);
         this.framebufferDefinitions.put(name, definition);
         this.initFramebuffer(name, definition, runtime);
         if (!definition.width().isConstant() || !definition.height().isConstant()) {
@@ -156,7 +158,7 @@ public class FramebufferManager extends CodecReloadListener<FramebufferDefinitio
      * @param name The name of the framebuffer to add
      * @param fbo  The framebuffer to add
      */
-    public void setFramebuffer(ResourceLocation name, AdvancedFbo fbo) {
+    public void setFramebuffer(Identifier name, AdvancedFbo fbo) {
         if (this.manualFramebuffers.add(name)) {
             AdvancedFbo oldBuffer = this.framebuffers.remove(name);
             if (oldBuffer != null) {
@@ -175,7 +177,7 @@ public class FramebufferManager extends CodecReloadListener<FramebufferDefinitio
      * @param name The name of the framebuffer to remove
      * @return The framebuffer previously defined or <code>null</code> if there was no manual buffer defined
      */
-    public @Nullable AdvancedFbo removeFramebuffer(ResourceLocation name) {
+    public @Nullable AdvancedFbo removeFramebuffer(Identifier name) {
         if (this.manualFramebuffers.remove(name)) {
             return this.framebuffers.remove(name);
         }
@@ -188,7 +190,7 @@ public class FramebufferManager extends CodecReloadListener<FramebufferDefinitio
      * @param name The name of the framebuffer to retrieve
      * @return The framebuffer by that name
      */
-    public @Nullable AdvancedFbo getFramebuffer(ResourceLocation name) {
+    public @Nullable AdvancedFbo getFramebuffer(Identifier name) {
         return this.framebuffers.get(name);
     }
 
@@ -198,19 +200,19 @@ public class FramebufferManager extends CodecReloadListener<FramebufferDefinitio
      * @param name The name of the definition to retrieve
      * @return The definition by that name
      */
-    public @Nullable FramebufferDefinition getFramebufferDefinition(ResourceLocation name) {
+    public @Nullable FramebufferDefinition getFramebufferDefinition(Identifier name) {
         return this.framebufferDefinitions.get(name);
     }
 
     /**
      * @return An immutable view of all custom framebuffers loaded
      */
-    public Map<ResourceLocation, AdvancedFbo> getFramebuffers() {
+    public Map<Identifier, AdvancedFbo> getFramebuffers() {
         return this.framebuffersView;
     }
 
     @Override
-    protected void apply(@NotNull Map<ResourceLocation, FramebufferDefinition> data, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profilerFiller) {
+    protected void apply(@NotNull Map<Identifier, FramebufferDefinition> data, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profilerFiller) {
         this.framebufferDefinitions.clear();
         this.framebufferDefinitions.putAll(data);
         Veil.LOGGER.info("Loaded {} framebuffers", this.framebufferDefinitions.size());

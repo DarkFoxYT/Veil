@@ -1,10 +1,14 @@
 package foundry.veil.api.client.render.post;
 
+
+
+import com.mojang.blaze3d.platform.DestFactor;
+import com.mojang.blaze3d.platform.SourceFactor;
 import com.google.common.collect.Iterables;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
@@ -26,7 +30,7 @@ import foundry.veil.impl.client.render.pipeline.PostPipelineContext;
 import foundry.veil.platform.VeilClientPlatform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.FileToIdConverter;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -47,19 +51,19 @@ import static org.lwjgl.opengl.GL11C.GL_LEQUAL;
 /**
  * <p>Manages all post pipelines.</p>
  * <p>Post Pipelines are a single "effect" that can be applied.
- * For example, a vanilla Minecraft creeper effect can be added using {@link #add(int, ResourceLocation)}</p>
+ * For example, a vanilla Minecraft creeper effect can be added using {@link #add(int, Identifier)}</p>
  *
  * @author Ocelot
  */
 public class PostProcessingManager extends CodecReloadListener<CompositePostPipeline> implements NativeResource {
 
     private static final Comparator<ProfileEntry> PIPELINE_SORTER = Comparator.comparingInt(ProfileEntry::getPriority).reversed();
-    private static final ResourceLocation POST = Veil.veilPath("post");
+    private static final Identifier POST = Veil.veilPath("post");
 
     private final PostPipelineContext context;
     private final List<ProfileEntry> activePipelines;
     private final List<ProfileEntry> activePipelinesView;
-    private final Map<ResourceLocation, CompositePostPipeline> pipelines;
+    private final Map<Identifier, CompositePostPipeline> pipelines;
     private boolean pipelinesDirty;
     private int enabledBuffers;
 
@@ -82,7 +86,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
      * @param pipeline The pipeline to check for
      * @return Whether that pipeline is active
      */
-    public boolean isActive(ResourceLocation pipeline) {
+    public boolean isActive(Identifier pipeline) {
         for (ProfileEntry entry : this.activePipelines) {
             if (entry.pipeline.equals(pipeline)) {
                 return true;
@@ -98,7 +102,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
      * @param pipeline The pipeline to add
      * @return Whether the pipeline was added or had a priority change
      */
-    public boolean add(ResourceLocation pipeline) {
+    public boolean add(Identifier pipeline) {
         return this.add(1000, pipeline);
     }
 
@@ -110,7 +114,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
      * @param pipeline The pipeline to add
      * @return Whether the pipeline was added or had a priority change
      */
-    public boolean add(int priority, ResourceLocation pipeline) {
+    public boolean add(int priority, Identifier pipeline) {
         ListIterator<ProfileEntry> iterator = this.activePipelines.listIterator();
         while (iterator.hasNext()) {
             ProfileEntry entry = iterator.next();
@@ -135,7 +139,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
      * @param pipeline The pipeline to remove
      * @return If the pipeline was previously active
      */
-    public boolean remove(ResourceLocation pipeline) {
+    public boolean remove(Identifier pipeline) {
         Iterator<ProfileEntry> iterator = this.activePipelines.iterator();
         while (iterator.hasNext()) {
             if (iterator.next().pipeline.equals(pipeline)) {
@@ -153,7 +157,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
      * @param pipeline The pipeline to get
      * @return The pipeline found or <code>null</code> if it doesn't exist
      */
-    public @Nullable PostPipeline getPipeline(ResourceLocation pipeline) {
+    public @Nullable PostPipeline getPipeline(Identifier pipeline) {
         return this.pipelines.get(pipeline);
     }
 
@@ -165,29 +169,29 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
 
     private void setup() {
         VeilRenderProfiler.get().push("veil_post", RenderProfilerCounter.FRAGMENT_SHADER_INVOCATIONS);
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(GL_ALWAYS);
-        RenderSystem.depthMask(false);
-        RenderSystem.enableBlend();
-        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        GlStateManager._enableDepthTest();
+        GlStateManager._depthFunc(GL_ALWAYS);
+        GlStateManager._depthMask(false);
+        GlStateManager._enableBlend();
+        GlStateManager._blendFuncSeparate(org.lwjgl.opengl.GL11C.GL_ONE, org.lwjgl.opengl.GL11C.GL_ZERO, org.lwjgl.opengl.GL11C.GL_ONE, org.lwjgl.opengl.GL11C.GL_ZERO);
         FramebufferStack.push(POST);
     }
 
     private void clear() {
         ShaderProgram.unbind();
-        RenderSystem.depthFunc(GL_LEQUAL);
-        RenderSystem.disableDepthTest();
-        RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
-        RenderSystem.defaultBlendFunc();
+        GlStateManager._depthFunc(GL_LEQUAL);
+        GlStateManager._disableDepthTest();
+        GlStateManager._depthMask(true);
+        GlStateManager._disableBlend();
+        GlStateManager._blendFuncSeparate(org.lwjgl.opengl.GL11C.GL_SRC_ALPHA, org.lwjgl.opengl.GL11C.GL_ONE_MINUS_SRC_ALPHA, org.lwjgl.opengl.GL11C.GL_ONE, org.lwjgl.opengl.GL11C.GL_ZERO);
         FramebufferStack.pop(POST);
         VeilRenderProfiler.get().pop();
     }
 
     private void clearPipeline() {
-        RenderSystem.colorMask(true, true, true, true);
-        RenderSystem.depthFunc(GL_ALWAYS);
-        RenderSystem.depthMask(false);
+        GlStateManager._colorMask(true, true, true, true);
+        GlStateManager._depthFunc(GL_ALWAYS);
+        GlStateManager._depthMask(false);
     }
 
     @ApiStatus.Internal
@@ -208,14 +212,14 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
         VeilClientPlatform platform = VeilClient.clientPlatform();
         this.context.begin();
         this.setup();
-        int activeTexture = GlStateManager._getActiveTexture();
+        int activeTexture = VeilRenderSystem.getActiveTexture();
 
         if (this.pipelinesDirty) {
             this.pipelinesDirty = false;
             this.activePipelines.sort(PIPELINE_SORTER);
         }
         for (ProfileEntry entry : this.activePipelines) {
-            ResourceLocation id = entry.getPipeline();
+            Identifier id = entry.getPipeline();
             CompositePostPipeline pipeline = this.pipelines.get(id);
             if (pipeline != null) {
                 this.enabledBuffers |= pipeline.getDynamicBuffersMask();
@@ -248,7 +252,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
             }
         }
 
-        RenderSystem.activeTexture(activeTexture);
+        GlStateManager._activeTexture(activeTexture);
         this.clear();
         this.context.end();
 
@@ -283,7 +287,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
 
         this.context.begin();
         this.setup();
-        int activeTexture = GlStateManager._getActiveTexture();
+        int activeTexture = VeilRenderSystem.getActiveTexture();
 
         try {
             pipeline.apply(this.context);
@@ -292,7 +296,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
             Veil.LOGGER.error("Error running pipeline {}", pipeline, e);
         }
 
-        RenderSystem.activeTexture(activeTexture);
+        GlStateManager._activeTexture(activeTexture);
         this.clear();
         this.context.end();
 
@@ -346,13 +350,13 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
     }
 
     @Override
-    protected @NotNull Map<ResourceLocation, CompositePostPipeline> prepare(@NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profilerFiller) {
-        Map<ResourceLocation, CompositePostPipeline> data = new HashMap<>();
+    protected @NotNull Map<Identifier, CompositePostPipeline> prepare(@NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profilerFiller) {
+        Map<Identifier, CompositePostPipeline> data = new HashMap<>();
 
-        Map<ResourceLocation, List<Resource>> resources = this.converter.listMatchingResourceStacks(resourceManager);
-        for (Map.Entry<ResourceLocation, List<Resource>> entry : resources.entrySet()) {
-            ResourceLocation location = entry.getKey();
-            ResourceLocation id = this.converter.fileToId(location);
+        Map<Identifier, List<Resource>> resources = this.converter.listMatchingResourceStacks(resourceManager);
+        for (Map.Entry<Identifier, List<Resource>> entry : resources.entrySet()) {
+            Identifier location = entry.getKey();
+            Identifier id = this.converter.fileToId(location);
 
             if (entry.getValue().size() == 1) {
                 try {
@@ -400,7 +404,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
     }
 
     @Override
-    protected void apply(@NotNull Map<ResourceLocation, CompositePostPipeline> data, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profilerFiller) {
+    protected void apply(@NotNull Map<Identifier, CompositePostPipeline> data, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller profilerFiller) {
         this.free();
         this.pipelines.putAll(data);
         Veil.LOGGER.info("Loaded {} post pipelines", this.pipelines.size());
@@ -422,7 +426,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
     /**
      * @return All available pipelines
      */
-    public @NotNull Set<ResourceLocation> getPipelines() {
+    public @NotNull Set<Identifier> getPipelines() {
         return this.pipelines.keySet();
     }
 
@@ -442,10 +446,10 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
      */
     public static class ProfileEntry {
 
-        private final ResourceLocation pipeline;
+        private final Identifier pipeline;
         private int priority;
 
-        public ProfileEntry(ResourceLocation pipeline, int priority) {
+        public ProfileEntry(Identifier pipeline, int priority) {
             this.pipeline = pipeline;
             this.priority = priority;
         }
@@ -453,7 +457,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
         /**
          * @return The id of the pipeline shader
          */
-        public ResourceLocation getPipeline() {
+        public Identifier getPipeline() {
             return this.pipeline;
         }
 

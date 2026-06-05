@@ -53,16 +53,23 @@ public enum VeilDebug {
         @Override
         public void pushDebugGroup(CharSequence message) {
             glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 10000 + MESSAGE_ID.incrementAndGet() * 100, message);
+            DEBUG_GROUP_DEPTH.set(DEBUG_GROUP_DEPTH.get() + 1);
         }
 
         @Override
         public void popDebugGroup() {
+            int depth = DEBUG_GROUP_DEPTH.get();
+            if (depth <= 0) {
+                return;
+            }
+            DEBUG_GROUP_DEPTH.set(depth - 1);
             glPopDebugGroup();
         }
     };
 
     @ApiStatus.Internal
     public static final AtomicInteger MESSAGE_ID = new AtomicInteger();
+    private static final ThreadLocal<Integer> DEBUG_GROUP_DEPTH = ThreadLocal.withInitial(() -> 0);
 
     private static VeilDebug debug;
 

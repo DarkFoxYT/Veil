@@ -1,0 +1,78 @@
+{
+  "should_collide": false,
+  "face_velocity": true,
+  "velocity_stretch_factor": 2.2,
+  "init_modules": [
+    {
+      "module": "veil:lightmap",
+      "fullbright": true
+    },
+    {
+      "module": "veil:light",
+      "gradient": {
+        "color": "#66D8FF"
+      },
+      "brightness": 0.8,
+      "radius": 2.5
+    }
+  ],
+  "forces": [
+    {
+      "module": "veil:gravity",
+      "strength": -0.03
+    },
+    {
+      "module": "veil:drag",
+      "strength": 0.97
+    }
+  ],
+  "render_modules": [
+    {
+      "module": "veil:color",
+      "gradient": {
+        "rgb_points": [
+          {
+            "percent": 0.0,
+            "color": "#A3F7FF"
+          },
+          {
+            "percent": 1.0,
+            "color": "#725CFF"
+          }
+        ],
+        "alpha_points": [
+          {
+            "percent": 0.0,
+            "alpha": 0.9
+          },
+          {
+            "percent": 1.0,
+            "alpha": 0.0
+          }
+        ]
+      },
+      "interpolant": "q.age_percent"
+    },
+    {
+      "module": "veil:trail",
+      "settings": [
+        {
+          "trailFrequency": 1,
+          "trailLength": 12,
+          "trailColor": [0.42, 0.84, 1.0, 0.7],
+          "trailWidthModifier": 0.08,
+          "trailTexture": "veil:textures/special/blank.png",
+          "trailPointModifier": 1.0,
+          "tilingMode": "stretch",
+          "billboard": true,
+          "parentRotation": false
+        }
+      ]
+    }
+  ],
+  "sprite_data": {
+    "sprite": "veil:textures/special/blank.png"
+  },
+  "additive": true,
+  "render_style": "veil:billboard"
+}

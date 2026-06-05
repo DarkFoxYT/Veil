@@ -1,0 +1,13 @@
+{
+  "max_lifetime": 64,
+  "loop": false,
+  "rate": 2,
+  "count": 48,
+  "max_particles": 320,
+  "emitter_settings": {
+    "shape": "veil:examples/soft_ring",
+    "particle_settings": "veil:examples/soft_ring",
+    "force_spawn": true
+  },
+  "particle_data": "veil:examples/soft_ring"
+}

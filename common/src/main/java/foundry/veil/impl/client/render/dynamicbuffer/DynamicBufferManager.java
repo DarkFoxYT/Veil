@@ -1,7 +1,7 @@
 package foundry.veil.impl.client.render.dynamicbuffer;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import foundry.veil.Veil;
 import foundry.veil.VeilClient;
 import foundry.veil.api.client.render.VeilRenderSystem;
@@ -12,13 +12,12 @@ import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.framebuffer.FramebufferManager;
 import foundry.veil.ext.RenderTargetExtension;
 import foundry.veil.ext.ShaderInstanceExtension;
-import foundry.veil.mixin.dynamicbuffer.accessor.DynamicBufferGameRendererAccessor;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
@@ -35,18 +34,19 @@ import static org.lwjgl.opengl.GL30C.GL_COLOR_ATTACHMENT1;
 @ApiStatus.Internal
 public class DynamicBufferManager implements NativeResource {
 
-    public static final ResourceLocation MAIN_WRAPPER = Veil.veilPath("dynamic_main");
+    public static final Identifier MAIN_WRAPPER = Veil.veilPath("dynamic_main");
     private static final DynamicBufferType[] BUFFERS = DynamicBufferType.values();
     private static final long MAX_SHADER_COMPILE_TIME_NS = 2 * 1_000_000; // millisecond -> nanosecond
 
     private int activeBuffers;
-    private final Object2IntMap<ResourceLocation> activeBufferLayers;
+    private final Object2IntMap<Identifier> activeBufferLayers;
     private boolean enabled;
     private final int[] clearBuffers;
-    private final Map<ResourceLocation, AdvancedFbo> framebuffers;
+    private final Map<Identifier, AdvancedFbo> framebuffers;
     private final List<AdvancedFbo> dynamicFramebuffers;
     private final EnumMap<DynamicBufferType, DynamicBuffer> dynamicBuffers;
     private final Set<ShaderInstance> swapShaders;
+    private AdvancedFbo activeRenderPassFbo;
     private int dynamicFboPointer;
 
     public DynamicBufferManager(int width, int height) {
@@ -72,7 +72,7 @@ public class DynamicBufferManager implements NativeResource {
 
     private void deleteFramebuffers() {
         FramebufferManager framebufferManager = VeilRenderSystem.renderer().getFramebufferManager();
-        for (Map.Entry<ResourceLocation, AdvancedFbo> entry : this.framebuffers.entrySet()) {
+        for (Map.Entry<Identifier, AdvancedFbo> entry : this.framebuffers.entrySet()) {
             entry.getValue().free();
             framebufferManager.removeFramebuffer(entry.getKey());
         }
@@ -84,7 +84,7 @@ public class DynamicBufferManager implements NativeResource {
         this.dynamicFboPointer = 0;
     }
 
-    public int getActiveBuffers(ResourceLocation name) {
+    public int getActiveBuffers(Identifier name) {
         return this.activeBufferLayers.getOrDefault(name, 0);
     }
 
@@ -101,10 +101,10 @@ public class DynamicBufferManager implements NativeResource {
             }
             return this.dynamicBuffers.get(buffer).textureId;
         }
-        return MissingTextureAtlasSprite.getTexture().getId();
+        return 0;
     }
 
-    public boolean setActiveBuffers(ResourceLocation name, int activeBuffers) {
+    public boolean setActiveBuffers(Identifier name, int activeBuffers) {
         if (Veil.IRIS) {
             return false;
         }
@@ -133,20 +133,8 @@ public class DynamicBufferManager implements NativeResource {
         this.deleteFramebuffers();
 
         VeilRenderer renderer = VeilRenderSystem.renderer();
-        this.swapShaders.clear();
-
-        DynamicBufferGameRendererAccessor accessor = (DynamicBufferGameRendererAccessor) Minecraft.getInstance().gameRenderer;
-        for (ShaderInstance shader : accessor.getShaders().values()) {
-            if (((ShaderInstanceExtension) shader).veil$swapBuffers(this.activeBuffers)) {
-                this.swapShaders.add(shader);
-            }
-        }
-        if (!this.swapShaders.isEmpty()) {
-            renderer.getVanillaShaderCompiler().reload(this.swapShaders);
-        }
-
         try {
-            renderer.getShaderManager().setActiveBuffers(activeBuffers);
+            renderer.getShaderManager().setActiveBuffers(this.activeBuffers);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -188,7 +176,7 @@ public class DynamicBufferManager implements NativeResource {
      * @param renderTarget The render target to wrap or <code>null</code> to free
      * @param setViewport  Whether the viewport should also be set
      */
-    public void setupRenderState(ResourceLocation name, @Nullable RenderTarget renderTarget, boolean setViewport) {
+    public void setupRenderState(Identifier name, @Nullable RenderTarget renderTarget, boolean setViewport) {
         if (!this.isEnabled()) {
             return;
         }
@@ -207,14 +195,14 @@ public class DynamicBufferManager implements NativeResource {
         AdvancedFbo fbo = this.framebuffers.get(name);
         if (fbo == null) {
             AdvancedFbo.Builder builder = AdvancedFbo.withSize(renderTarget.width, renderTarget.height);
-            builder.addColorTextureWrapper(renderTarget.getColorTextureId());
+            builder.addColorTextureWrapper(VeilRenderSystem.getColorTextureId(renderTarget));
             for (Map.Entry<DynamicBufferType, DynamicBuffer> entry : this.dynamicBuffers.entrySet()) {
                 DynamicBufferType type = entry.getKey();
                 if ((this.activeBuffers & type.getMask()) != 0) {
                     builder.setName(type.getSourceName()).addColorTextureWrapper(entry.getValue().textureId);
                 }
             }
-            builder.setDepthTextureWrapper(renderTarget.getDepthTextureId());
+            builder.setDepthTextureWrapper(VeilRenderSystem.getDepthTextureId(renderTarget));
             builder.setDebugLabel(name.toString());
             fbo = builder.build(true);
             this.framebuffers.put(name, fbo);
@@ -222,6 +210,28 @@ public class DynamicBufferManager implements NativeResource {
 
         VeilRenderSystem.renderer().getFramebufferManager().setFramebuffer(name, fbo);
         fbo.bind(setViewport);
+    }
+
+    public @Nullable AdvancedFbo beginRenderPass(Identifier name, @Nullable RenderTarget renderTarget) {
+        if (!this.isEnabled() || renderTarget == null) {
+            this.activeRenderPassFbo = null;
+            return null;
+        }
+
+        this.setupRenderState(name, renderTarget, false);
+        AdvancedFbo fbo = this.framebuffers.get(name);
+        this.activeRenderPassFbo = fbo;
+        return fbo;
+    }
+
+    public void endRenderPass(AdvancedFbo fbo) {
+        if (this.activeRenderPassFbo == fbo) {
+            this.activeRenderPassFbo = null;
+        }
+    }
+
+    public @Nullable AdvancedFbo getActiveRenderPassFbo() {
+        return this.activeRenderPassFbo;
     }
 
     /**
@@ -355,7 +365,7 @@ public class DynamicBufferManager implements NativeResource {
             GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
             GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, 0);
             GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 0);
-            GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0F);
+            org.lwjgl.opengl.GL11C.glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0F);
             GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             GlStateManager._texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 

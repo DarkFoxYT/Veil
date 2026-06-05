@@ -3,7 +3,7 @@ package foundry.veil.api.client.util;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
@@ -78,7 +78,7 @@ public class DebugFrustumRenderer {
             }
         }
 
-        VertexConsumer consumer = source.getBuffer(RenderType.lines());
+        VertexConsumer consumer = source.getBuffer(net.minecraft.client.renderer.rendertype.RenderTypes.lines());
 
         // Near
         putLine(consumer, 0, 0, 0, 0, 1, 0, red, green, blue, alpha);

@@ -5,7 +5,6 @@ import com.electronwill.nightconfig.core.concurrent.ConcurrentConfig;
 import com.electronwill.nightconfig.core.file.FileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
 import com.mojang.datafixers.util.Pair;
-import cpw.mods.niofs.union.UnionFileSystem;
 import foundry.veil.Veil;
 import net.neoforged.fml.loading.moddiscovery.NightConfigWrapper;
 import net.neoforged.neoforgespi.language.IConfigurable;
@@ -23,10 +22,6 @@ public final class ForgePackHooks {
     }
 
     public static @Nullable Pair<String, Boolean> getIcon(Path path) {
-        if (!(path.getFileSystem() instanceof UnionFileSystem)) {
-            return null;
-        }
-
         Path file = path.resolve("META-INF").resolve("neoforge.mods.toml");
         if (!Files.isRegularFile(file)) {
             return null;

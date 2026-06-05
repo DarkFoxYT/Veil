@@ -1,0 +1,13 @@
+{
+  "max_lifetime": 120,
+  "loop": true,
+  "rate": 2,
+  "count": 6,
+  "max_particles": 240,
+  "emitter_settings": {
+    "shape": "veil:examples/player_cube_cloud",
+    "particle_settings": "veil:examples/player_cube_cloud",
+    "force_spawn": false
+  },
+  "particle_data": "veil:examples/player_cube_cloud"
+}

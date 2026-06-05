@@ -1,9 +1,10 @@
 package foundry.veil.impl.client.editor;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.platform.TextureUtil;
 import foundry.veil.Veil;
 import foundry.veil.api.client.editor.SingleWindowInspector;
+import foundry.veil.api.client.imgui.VeilImGuiUtil;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
@@ -18,12 +19,12 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.system.NativeResource;
 
@@ -53,8 +54,8 @@ public class TextureInspector extends SingleWindowInspector {
     public static final Component FLIP_X = Component.translatable("inspector.veil.texture.toggle.flip_x");
     public static final Component FLIP_Y = Component.translatable("inspector.veil.texture.toggle.flip_y");
     public static final Component NO_TEXTURE = Component.translatable("inspector.veil.texture.asset.missing");
-    private static final ResourceLocation DEBUG_CUBEMAP_SHADER = Veil.veilPath("debug/cubemap");
-    private static final ResourceLocation DEBUG_ARRAY_SHADER = Veil.veilPath("debug/array");
+    private static final Identifier DEBUG_CUBEMAP_SHADER = Veil.veilPath("debug/cubemap");
+    private static final Identifier DEBUG_ARRAY_SHADER = Veil.veilPath("debug/array");
 
     private final IntSet texturesSet;
     private final Int2ObjectMap<OpenTexture> openTextures;
@@ -353,7 +354,7 @@ public class TextureInspector extends SingleWindowInspector {
             float size = ImGui.getContentRegionAvailX();
 
             cubemapStorage.render((int) size, (int) (size / 2.0F));
-            ImGui.image(cubemapStorage.renderedTextureId(), size, size / 2.0F, flipX ? 1 : 0, flipY ? 1 : 0, flipX ? 0 : 1, flipY ? 0 : 1, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F);
+            VeilImGuiUtil.image(cubemapStorage.renderedTextureId(), size, size / 2.0F, flipX ? 1 : 0, flipY ? 1 : 0, flipX ? 0 : 1, flipY ? 0 : 1);
         } else if (target == GL_TEXTURE_2D_ARRAY) {
             TextureStorage storage = this.textureStorage.get(selectedId);
             if (!(storage instanceof ArrayStorage)) {
@@ -371,7 +372,7 @@ public class TextureInspector extends SingleWindowInspector {
 
             arrayStorage.render(selectedId, width, height, depth);
             for (int i = 0; i < depth; i++) {
-                ImGui.image(arrayStorage.renderedTextureId(i), size, size * (float) height / (float) width, flipX ? 1 : 0, flipY ? 1 : 0, flipX ? 0 : 1, flipY ? 0 : 1, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F);
+                VeilImGuiUtil.image(arrayStorage.renderedTextureId(i), size, size * (float) height / (float) width, flipX ? 1 : 0, flipY ? 1 : 0, flipX ? 0 : 1, flipY ? 0 : 1);
             }
         } else if (target == GL_TEXTURE_2D) {
             TextureStorage storage = this.textureStorage.remove(selectedId);
@@ -382,7 +383,7 @@ public class TextureInspector extends SingleWindowInspector {
             int width = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH);
             int height = glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT);
             float size = ImGui.getContentRegionAvailX();
-            ImGui.image(selectedId, size, size * (float) height / (float) width, flipX ? 1 : 0, flipY ? 1 : 0, flipX ? 0 : 1, flipY ? 0 : 1, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F);
+            VeilImGuiUtil.image(selectedId, size, size * (float) height / (float) width, flipX ? 1 : 0, flipY ? 1 : 0, flipX ? 0 : 1, flipY ? 0 : 1);
         }
     }
 
@@ -456,7 +457,7 @@ public class TextureInspector extends SingleWindowInspector {
                 VeilRenderSystem.createTextures(GL_TEXTURE_2D, this.textures);
                 for (int tex : this.textures) {
                     GlStateManager._bindTexture(tex);
-                    TextureUtil.prepareImage(tex, width, height);
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0L);
                 }
                 glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
             }
@@ -487,7 +488,7 @@ public class TextureInspector extends SingleWindowInspector {
         }
 
         public int renderedTextureId(int index) {
-            return this.textures == null || index < 0 || index >= this.textures.length ? MissingTextureAtlasSprite.getTexture().getId() : this.textures[index];
+            return this.textures == null || index < 0 || index >= this.textures.length ? VeilRenderSystem.getMissingTextureId() : this.textures[index];
         }
 
         @Override

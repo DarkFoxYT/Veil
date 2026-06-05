@@ -5,7 +5,7 @@ import foundry.veil.api.client.render.shader.compiler.ShaderException;
 import foundry.veil.api.client.render.shader.compiler.VeilShaderSource;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +28,7 @@ public class CachedShaderCompiler extends DirectShaderCompiler {
     }
 
     @Override
-    public CompiledShader compile(int type, ResourceLocation path) throws IOException, ShaderException {
+    public CompiledShader compile(int type, Identifier path) throws IOException, ShaderException {
         int hash = Objects.hash(type, path);
         if (this.shaders.containsKey(hash)) {
             return this.shaders.get(hash);

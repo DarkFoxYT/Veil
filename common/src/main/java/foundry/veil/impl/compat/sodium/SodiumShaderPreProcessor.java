@@ -58,7 +58,7 @@ public class SodiumShaderPreProcessor implements ShaderPreProcessor {
                     if (ctx.isFragment()) {
                         treeBody.add(GlslInjectionPoint.BEFORE_MAIN, GlslParser.parseExpression("in vec4 PassVeilVertexColor"));
                         treeBody.add(GlslInjectionPoint.BEFORE_MAIN, GlslParser.parseExpression(output));
-                        mainBody.add(1, GlslParser.parseExpression(sourceName + " = texture(u_BlockTex, v_TexCoord, lodBias) * PassVeilVertexColor"));
+                        mainBody.add(1, GlslParser.parseExpression(sourceName + " = (u_UseRGSS ? sampleRGSS(u_BlockTex, v_TexCoord, u_TexelSize) : sampleNearest(u_BlockTex, v_TexCoord, u_TexelSize)) * PassVeilVertexColor"));
                         modified = true;
                     }
                 }

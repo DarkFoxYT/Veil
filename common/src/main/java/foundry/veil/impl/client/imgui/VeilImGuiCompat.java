@@ -7,24 +7,28 @@ import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.VeilRenderer;
 import foundry.veil.impl.client.editor.*;
 import foundry.veil.platform.VeilEventPlatform;
+import imgui.ImGui;
 import net.minecraft.client.KeyMapping;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
 public final class VeilImGuiCompat {
 
-    public static final KeyMapping EDITOR_KEY = new KeyMapping("key.veil.editor", InputConstants.KEY_F6, "key.categories.veil");
+    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Veil.veilPath("main"));
+    public static final KeyMapping EDITOR_KEY = new KeyMapping("key.veil.editor", InputConstants.KEY_F6, CATEGORY);
 
     private VeilImGuiCompat() {
     }
 
     public static void load() {
-        ImGuiMCEvents.INSTANCE.preRenderImGuiEvents(() -> {
+        ImGuiMCEvents.INSTANCE.preRenderImGuiEvent(() -> {
+            ImGui.getIO().getFonts().setTexID(1L);
             VeilImGuiStylesheet.initStyles();
             AdvancedFboImGuiAreaImpl.begin();
             VeilRenderSystem.renderer().getEditorManager().render();
         });
-        ImGuiMCEvents.INSTANCE.postRenderImGuiEvents(() -> {
+        ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(() -> {
+            ImGui.getIO().getFonts().setTexID(1L);
             VeilImGuiStylesheet.initStyles();
             VeilRenderSystem.renderer().getEditorManager().renderLast();
             AdvancedFboImGuiAreaImpl.end();

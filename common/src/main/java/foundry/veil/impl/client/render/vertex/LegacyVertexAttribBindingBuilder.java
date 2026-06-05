@@ -1,5 +1,7 @@
 package foundry.veil.impl.client.render.vertex;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.vertex.VertexArray;
@@ -35,7 +37,7 @@ public class LegacyVertexAttribBindingBuilder implements VertexArrayBuilder {
                 throw new IllegalArgumentException("No vertex buffer defined for index: " + index);
             }
 
-            RenderSystem.glBindBuffer(GL_ARRAY_BUFFER, this.vertexBuffers[index].buffer);
+            GlStateManager._glBindBuffer(GL_ARRAY_BUFFER, this.vertexBuffers[index].buffer);
             this.boundIndex = index;
         }
     }

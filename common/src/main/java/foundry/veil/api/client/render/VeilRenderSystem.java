@@ -1,9 +1,14 @@
 package foundry.veil.api.client.render;
 
 import com.google.common.base.Suppliers;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.opengl.GlDevice;
+import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import foundry.imgui.api.ImGuiMC;
@@ -30,6 +35,7 @@ import foundry.veil.api.compat.SodiumCompat;
 import foundry.veil.api.event.VeilRenderLevelStageEvent;
 import foundry.veil.api.flare.modifier.RandomnessController;
 import foundry.veil.ext.LevelRendererExtension;
+import foundry.veil.ext.RenderTargetExtension;
 import foundry.veil.ext.TextureManagerExtension;
 import foundry.veil.ext.VertexBufferExtension;
 import foundry.veil.impl.client.imgui.AdvancedFboImGuiAreaImpl;
@@ -39,18 +45,20 @@ import foundry.veil.impl.client.render.light.VoxelShadowGrid;
 import foundry.veil.impl.client.render.pipeline.VeilBloomRenderer;
 import foundry.veil.impl.client.render.pipeline.VeilShaderBlockState;
 import foundry.veil.impl.client.render.pipeline.VeilShaderBufferCache;
+import foundry.veil.impl.client.render.framebuffer.AdvancedFboImpl;
 import foundry.veil.impl.client.render.profiler.VeilRenderProfilerImpl;
 import foundry.veil.impl.client.render.shader.program.ShaderProgramImpl;
 import foundry.veil.mixin.pipeline.accessor.PipelineBufferSourceAccessor;
 import foundry.veil.platform.VeilEventPlatform;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.ApiStatus;
@@ -89,12 +97,12 @@ public final class VeilRenderSystem {
 
     private static final Executor RENDER_THREAD_EXECUTOR = task -> {
         if (!RenderSystem.isOnRenderThread()) {
-            RenderSystem.recordRenderCall(task::run);
+            Minecraft.getInstance().execute(task);
         } else {
             task.run();
         }
     };
-    private static final Set<ResourceLocation> ERRORED_SHADERS = new HashSet<>();
+    private static final Set<Identifier> ERRORED_SHADERS = new HashSet<>();
     private static final VeilShaderBlockState UNIFORM_BLOCK_STATE = new VeilShaderBlockState();
     private static final VeilShaderBufferCache SHADER_BUFFER_CACHE = new VeilShaderBufferCache();
 
@@ -216,9 +224,9 @@ public final class VeilRenderSystem {
     });
 
     private static final Supplier<Vector2ic> MAX_FRAMEBUFFER_SIZE = Suppliers.memoize(() -> {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         if (!GL.getCapabilities().OpenGL43) {
-            int maxSupportedTextureSize = RenderSystem.maxSupportedTextureSize();
+            int maxSupportedTextureSize = RenderSystem.getDevice().getMaxTextureSize();
             return new Vector2i(maxSupportedTextureSize, maxSupportedTextureSize);
         }
         int width = glGetInteger(GL_MAX_FRAMEBUFFER_WIDTH);
@@ -226,7 +234,7 @@ public final class VeilRenderSystem {
         return new Vector2i(width, height);
     });
     private static final Supplier<Vector3ic> MAX_COMPUTE_WORK_GROUP_COUNT = Suppliers.memoize(() -> {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         if (!COMPUTE_SUPPORTED.getAsBoolean()) {
             return new Vector3i();
         }
@@ -237,7 +245,7 @@ public final class VeilRenderSystem {
         return new Vector3i(width, height, depth);
     });
     private static final Supplier<Vector3ic> MAX_COMPUTE_WORK_GROUP_SIZE = Suppliers.memoize(() -> {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         if (!COMPUTE_SUPPORTED.getAsBoolean()) {
             return new Vector3i();
         }
@@ -258,7 +266,7 @@ public final class VeilRenderSystem {
 
     private static VeilRenderer renderer;
     private static GpuVendor gpuVendor;
-    private static ResourceLocation shaderLocation;
+    private static Identifier shaderLocation;
     private static int screenQuadVao;
     private static IntBuffer emptySamplers;
 
@@ -272,7 +280,7 @@ public final class VeilRenderSystem {
 
             @Override
             public boolean getAsBoolean() {
-                RenderSystem.assertOnRenderThreadOrInit();
+                RenderSystem.assertOnRenderThread();
                 if (!this.initialized) {
                     this.initialized = true;
                     return this.value = delegate.apply(GL.getCapabilities());
@@ -288,7 +296,7 @@ public final class VeilRenderSystem {
 
             @Override
             public int getAsInt() {
-                RenderSystem.assertOnRenderThreadOrInit();
+                RenderSystem.assertOnRenderThread();
                 if (this.value == Integer.MAX_VALUE) {
                     return this.value = delegate.getAsInt();
                 }
@@ -303,7 +311,7 @@ public final class VeilRenderSystem {
 
             @Override
             public long getAsLong() {
-                RenderSystem.assertOnRenderThreadOrInit();
+                RenderSystem.assertOnRenderThread();
                 if (this.value == Long.MAX_VALUE) {
                     return this.value = delegate.getAsLong();
                 }
@@ -318,7 +326,7 @@ public final class VeilRenderSystem {
 
             @Override
             public T get() {
-                RenderSystem.assertOnRenderThreadOrInit();
+                RenderSystem.assertOnRenderThread();
                 if (this.value == null) {
                     return this.value = delegate.get();
                 }
@@ -389,7 +397,7 @@ public final class VeilRenderSystem {
      * @param <T>     The texture type to register
      * @return A future for when the texture has loaded
      */
-    public static <T extends AbstractTexture & VeilPreloadedTexture> CompletableFuture<?> registerPreloadedTexture(ResourceLocation path, T texture) {
+    public static <T extends AbstractTexture & VeilPreloadedTexture> CompletableFuture<?> registerPreloadedTexture(Identifier path, T texture) {
         return registerPreloadedTexture(path, texture, Util.backgroundExecutor());
     }
 
@@ -402,7 +410,7 @@ public final class VeilRenderSystem {
      * @param <T>      The texture type to register
      * @return A future for when the texture has loaded
      */
-    public static <T extends AbstractTexture & VeilPreloadedTexture> CompletableFuture<?> registerPreloadedTexture(ResourceLocation path, T texture, Executor executor) {
+    public static <T extends AbstractTexture & VeilPreloadedTexture> CompletableFuture<?> registerPreloadedTexture(Identifier path, T texture, Executor executor) {
         return ((TextureManagerExtension) Minecraft.getInstance().getTextureManager()).veil$registerPreloadedTexture(path, texture, executor);
     }
 
@@ -421,14 +429,14 @@ public final class VeilRenderSystem {
      * @param shader The name of the shader to use
      * @return The Veil shader instance applied or <code>null</code> if there was an error
      */
-    public static @Nullable ShaderProgram setShader(ResourceLocation shader) {
+    public static @Nullable ShaderProgram setShader(Identifier shader) {
         ShaderManager shaderManager = renderer.getShaderManager();
         shaderLocation = shader;
         return setShader(() -> shaderManager.getShader(shader));
     }
 
     /**
-     * Sets the shader instance to a specific instance of a shader. {@link #setShader(ResourceLocation)} should be used in most cases.
+     * Sets the shader instance to a specific instance of a shader. {@link #setShader(Identifier)} should be used in most cases.
      *
      * @param shader The shader instance to use
      * @return The Veil shader instance applied or <code>null</code> if there was an error
@@ -439,18 +447,18 @@ public final class VeilRenderSystem {
     }
 
     /**
-     * Sets the shader instance to a specific instance reference of a shader. {@link #setShader(ResourceLocation)} should be used in most cases.
+     * Sets the shader instance to a specific instance reference of a shader. {@link #setShader(Identifier)} should be used in most cases.
      *
      * @param shader The reference to the shader to use
      * @return The Veil shader instance applied or <code>null</code> if there was an error
      */
     public static @Nullable ShaderProgram setShader(Supplier<ShaderProgram> shader) {
-        RenderSystem.setShader(() -> {
-            ShaderProgram program = shader.get();
-            return program != null ? VeilRenderBridge.toShaderInstance(program) : null;
-        });
-
-        ShaderProgram value = getShader();
+        ShaderProgram value = shader.get();
+        if (value != null) {
+            value.bind();
+        } else {
+            ShaderProgram.unbind();
+        }
         if (value == null && shaderLocation != null && ERRORED_SHADERS.add(shaderLocation)) {
             Veil.LOGGER.error("Failed to apply shader: {}", shaderLocation);
         }
@@ -555,105 +563,105 @@ public final class VeilRenderSystem {
      * @see 3.1.0
      */
     public static boolean tessellationSupported() {
-        return TESSELLATION_SUPPORTED.getAsBoolean();
+        return openGLBackend() && TESSELLATION_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether compute shaders are supported
      */
     public static boolean computeSupported() {
-        return COMPUTE_SUPPORTED.getAsBoolean();
+        return openGLBackend() && COMPUTE_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether atomic counters in shaders are supported
      */
     public static boolean atomicCounterSupported() {
-        return ATOMIC_COUNTER_SUPPORTED.getAsBoolean();
+        return openGLBackend() && ATOMIC_COUNTER_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether transform feedback from shaders is supported
      */
     public static boolean transformFeedbackSupported() {
-        return TRANSFORM_FEEDBACK_SUPPORTED.getAsBoolean();
+        return openGLBackend() && TRANSFORM_FEEDBACK_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBMultiBind} is supported
      */
     public static boolean multibindSupported() {
-        return MULTIBIND_SUPPORTED.getAsBoolean();
+        return openGLBackend() && MULTIBIND_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBSparseBuffer} is supported
      */
     public static boolean sparseBuffersSupported() {
-        return SPARSE_BUFFERS_SUPPORTED.getAsBoolean();
+        return openGLBackend() && SPARSE_BUFFERS_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBDirectStateAccess} is supported
      */
     public static boolean directStateAccessSupported() {
-        return DIRECT_STATE_ACCESS_SUPPORTED.getAsBoolean();
+        return openGLBackend() && DIRECT_STATE_ACCESS_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBSeparateShaderObjects} is supported
      */
     public static boolean separateShaderObjectsSupported() {
-        return SEPARATE_SHADER_OBJECTS_SUPPORTED.getAsBoolean();
+        return openGLBackend() && SEPARATE_SHADER_OBJECTS_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBClearTexture} is supported
      */
     public static boolean clearTextureSupported() {
-        return CLEAR_TEXTURE_SUPPORTED.getAsBoolean();
+        return openGLBackend() && CLEAR_TEXTURE_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBCopyImage} is supported
      */
     public static boolean copyImageSupported() {
-        return COPY_IMAGE_SUPPORTED.getAsBoolean();
+        return openGLBackend() && COPY_IMAGE_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBShaderStorageBufferObject} is supported
      */
     public static boolean shaderStorageBufferSupported() {
-        return SHADER_STORAGE_BLOCK_SUPPORTED.getAsBoolean();
+        return openGLBackend() && SHADER_STORAGE_BLOCK_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBProgramInterfaceQuery} is supported
      */
     public static boolean programInterfaceQuerySupported() {
-        return PROGRAM_INTERFACE_QUERY_SUPPORTED.getAsBoolean();
+        return openGLBackend() && PROGRAM_INTERFACE_QUERY_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBTextureFilterAnisotropic} is supported
      */
     public static boolean textureAnisotropySupported() {
-        return TEXTURE_ANISOTROPY_SUPPORTED.getAsBoolean();
+        return openGLBackend() && TEXTURE_ANISOTROPY_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBTextureMirrorClampToEdge} is supported
      */
     public static boolean textureMirrorClampToEdgeSupported() {
-        return TEXTURE_MIRROR_CLAMP_TO_EDGE_SUPPORTED.getAsBoolean();
+        return openGLBackend() && TEXTURE_MIRROR_CLAMP_TO_EDGE_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBSeamlessCubemapPerTexture} is supported
      */
     public static boolean textureCubeMapSeamlessSupported() {
-        return TEXTURE_CUBE_MAP_SEAMLESS_SUPPORTED.getAsBoolean();
+        return openGLBackend() && TEXTURE_CUBE_MAP_SEAMLESS_SUPPORTED.getAsBoolean();
     }
 
     /**
@@ -661,49 +669,70 @@ public final class VeilRenderSystem {
      * @since 2.1.0
      */
     public static boolean textureCubeMapArraySupported() {
-        return TEXTURE_CUBE_MAP_ARRAY_SUPPORTED.getAsBoolean();
+        return openGLBackend() && TEXTURE_CUBE_MAP_ARRAY_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link NVDrawTexture} is supported
      */
     public static boolean nvDrawTextureSupported() {
-        return NV_DRAW_TEXTURE_SUPPORTED.getAsBoolean();
+        return openGLBackend() && NV_DRAW_TEXTURE_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBDrawIndirect} is supported
      */
     public static boolean drawIndirectSupported() {
-        return DRAW_INDIRECT_SUPPORTED.getAsBoolean();
+        return modernDrawIndirectSupported() || openGLBackend() && DRAW_INDIRECT_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBMultiDrawIndirect} is supported
      */
     public static boolean multiDrawIndirectSupported() {
-        return MULTI_DRAW_INDIRECT_SUPPORTED.getAsBoolean();
+        return modernMultiDrawIndirectSupported() || openGLBackend() && MULTI_DRAW_INDIRECT_SUPPORTED.getAsBoolean();
+    }
+
+    /**
+     * @return Whether the active Mojang rendering backend exposes indirect draw commands through the modern API
+     */
+    public static boolean modernDrawIndirectSupported() {
+        return false;
+    }
+
+    /**
+     * @return Whether the active Mojang rendering backend exposes multi-draw indirect commands through the modern API
+     */
+    public static boolean modernMultiDrawIndirectSupported() {
+        return false;
+    }
+
+    /**
+     * @return Whether Veil is currently running on Mojang's OpenGL backend
+     */
+    public static boolean openGLBackend() {
+        return RenderSystem.tryGetDevice() != null && "OpenGL".equalsIgnoreCase(RenderSystem.getDevice().getBackendName());
     }
 
     /**
      * @return Whether {@link ARBGPUShaderFP64} is supported
      */
     public static boolean gpuShaderFloat64BitSupported() {
-        return GPU_SHADER_FLOAT_64BIT_SUPPORTED.getAsBoolean();
+        return openGLBackend() && GPU_SHADER_FLOAT_64BIT_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBGPUShaderInt64} is supported
      */
     public static boolean gpuShaderInt64BitSupported() {
-        return GPU_SHADER_INT_64BIT_SUPPORTED.getAsBoolean();
+        return openGLBackend() && GPU_SHADER_INT_64BIT_SUPPORTED.getAsBoolean();
     }
 
     /**
      * @return Whether {@link ARBVertexAttrib64Bit} is supported
      */
     public static boolean vertexAttribute64BitSupported() {
-        return VERTEX_ATTRIB_64BIT_SUPPORTED.getAsBoolean();
+        return openGLBackend() && VERTEX_ATTRIB_64BIT_SUPPORTED.getAsBoolean();
     }
 
     /**
@@ -711,7 +740,7 @@ public final class VeilRenderSystem {
      * @since 2.0.0
      */
     public static boolean bindlessTextureSupported() {
-        return BINDLESS_TEXTURE_SUPPORTED.getAsBoolean();
+        return openGLBackend() && BINDLESS_TEXTURE_SUPPORTED.getAsBoolean();
     }
 
     /**
@@ -719,7 +748,7 @@ public final class VeilRenderSystem {
      * @since 2.0.0
      */
     public static boolean vertexType10F11F11FRevSupported() {
-        return VERTEX_TYPE_10F_11F_11F_REV_SUPPORTED.getAsBoolean();
+        return openGLBackend() && VERTEX_TYPE_10F_11F_11F_REV_SUPPORTED.getAsBoolean();
     }
 
 
@@ -728,7 +757,7 @@ public final class VeilRenderSystem {
      * @since 2.0.0
      */
     public static boolean pipelineStatisticsQuerySupported() {
-        return PIPELINE_STATISTICS_QUERY_SUPPORTED.getAsBoolean();
+        return openGLBackend() && PIPELINE_STATISTICS_QUERY_SUPPORTED.getAsBoolean();
     }
 
     /**
@@ -938,7 +967,7 @@ public final class VeilRenderSystem {
      * @param block The block to bind
      */
     public static void bind(CharSequence name, ShaderBlock<?> block) {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         UNIFORM_BLOCK_STATE.bind(name, block);
     }
 
@@ -952,7 +981,7 @@ public final class VeilRenderSystem {
      * @throws IllegalArgumentException If the layout is not registered
      */
     public static void bind(VeilShaderBufferLayout<?> layout) throws IllegalArgumentException {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         SHADER_BUFFER_CACHE.bind(layout);
     }
 
@@ -963,7 +992,7 @@ public final class VeilRenderSystem {
      * @param block The block to unbind
      */
     public static void unbind(ShaderBlock<?> block) {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         UNIFORM_BLOCK_STATE.unbind(block);
     }
 
@@ -975,7 +1004,7 @@ public final class VeilRenderSystem {
      * @throws IllegalArgumentException If the layout is not registered
      */
     public static void unbind(VeilShaderBufferLayout<?> layout) throws IllegalArgumentException {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         SHADER_BUFFER_CACHE.unbind(layout);
     }
 
@@ -988,7 +1017,7 @@ public final class VeilRenderSystem {
      * @throws IllegalArgumentException If the layout is not registered
      */
     public static <T> @Nullable ShaderBlock<T> getBlock(VeilShaderBufferLayout<T> layout) throws IllegalArgumentException {
-        RenderSystem.assertOnRenderThreadOrInit();
+        RenderSystem.assertOnRenderThread();
         return SHADER_BUFFER_CACHE.getBlock(layout);
     }
 
@@ -1023,6 +1052,23 @@ public final class VeilRenderSystem {
             case GL_TEXTURE_2D_MULTISAMPLE_ARRAY -> glGetInteger(GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY);
             default -> throw new IllegalStateException("Not a texture target: " + target);
         };
+    }
+
+    public static int getActiveTexture() {
+        return glGetInteger(GL_ACTIVE_TEXTURE);
+    }
+
+    public static int getGlFormat(NativeImage.Format format) {
+        return switch (format) {
+            case RGB -> GL_RGB;
+            case LUMINANCE_ALPHA -> GL_RG;
+            case LUMINANCE -> GL_RED;
+            case RGBA -> GL_RGBA;
+        };
+    }
+
+    public static void setUnpackPixelStoreState(NativeImage.Format format) {
+        GlStateManager._pixelStore(GL_UNPACK_ALIGNMENT, 1);
     }
 
     /**
@@ -1069,6 +1115,69 @@ public final class VeilRenderSystem {
         glGenTextures(textures);
     }
 
+    public static int getTextureId(AbstractTexture texture) {
+        try {
+            return getTextureId(texture.getTexture());
+        } catch (IllegalStateException e) {
+            return 0;
+        }
+    }
+
+    public static int getTextureId(@Nullable GpuTexture texture) {
+        return texture instanceof GlTexture glTexture ? glTexture.glId() : 0;
+    }
+
+    @Nullable
+    private static AdvancedFbo getWrapper(RenderTarget renderTarget) {
+        if (renderTarget instanceof RenderTargetExtension extension) {
+            return extension.veil$getWrapper();
+        }
+        if (renderTarget instanceof AdvancedFboImpl.Wrapper wrapper) {
+            return wrapper.fbo();
+        }
+        return null;
+    }
+
+    public static int getColorTextureId(RenderTarget renderTarget) {
+        AdvancedFbo wrapper = getWrapper(renderTarget);
+        if (wrapper != null && wrapper.isColorTextureAttachment(0)) {
+            return wrapper.getColorTextureAttachment(0).getId();
+        }
+        return getTextureId(renderTarget.getColorTexture());
+    }
+
+    public static int getDepthTextureId(RenderTarget renderTarget) {
+        AdvancedFbo wrapper = getWrapper(renderTarget);
+        if (wrapper != null && wrapper.isDepthTextureAttachment()) {
+            return wrapper.getDepthTextureAttachment().getId();
+        }
+        return getTextureId(renderTarget.getDepthTexture());
+    }
+
+    public static int getMissingTextureId() {
+        return getTextureId(Minecraft.getInstance().getTextureManager().getTexture(MissingTextureAtlasSprite.getLocation()));
+    }
+
+    public static int getFramebufferId(RenderTarget renderTarget) {
+        AdvancedFbo wrapper = getWrapper(renderTarget);
+        if (wrapper != null) {
+            return wrapper.getId();
+        }
+        GpuTexture colorTexture = renderTarget.getColorTexture();
+        if (colorTexture instanceof GlTexture glTexture && RenderSystem.tryGetDevice() instanceof GlDevice glDevice) {
+            return glTexture.getFbo(glDevice.directStateAccess(), renderTarget.getDepthTexture());
+        }
+        return 0;
+    }
+
+    public static void bind(RenderTarget renderTarget, boolean setViewport) {
+        RenderSystem.assertOnRenderThread();
+        GlStateManager._glBindFramebuffer(GL_FRAMEBUFFER, getFramebufferId(renderTarget));
+        if (setViewport) {
+            GlStateManager._viewport(0, 0, renderTarget.width, renderTarget.height);
+        }
+    }
+
     /**
      * @return The veil renderer instance
      */
@@ -1098,8 +1207,7 @@ public final class VeilRenderSystem {
      * @return The actual shader reference to use while rendering or <code>null</code> if no shader is selected or the selected shader is from Vanilla Minecraft
      */
     public static @Nullable ShaderProgram getShader() {
-        ShaderInstance shader = RenderSystem.getShader();
-        return shader instanceof ShaderProgramImpl.Wrapper wrapper ? wrapper.program() : null;
+        return null;
     }
 
     /**

@@ -11,7 +11,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.List;
  * @param <P> The entity to render
  * @param <S> The skeleton for the entity
  */
-public abstract class NecromancerEntityRenderer<P extends Entity & SkeletonParent<P, S>, S extends Skeleton> extends EntityRenderer<P> {
+public abstract class NecromancerEntityRenderer<P extends Entity & SkeletonParent<P, S>, S extends Skeleton> extends EntityRenderer<P, EntityRenderState> {
 
     private final List<NecromancerEntityRenderLayer<P, S>> layers;
 
@@ -69,11 +70,9 @@ public abstract class NecromancerEntityRenderer<P extends Entity & SkeletonParen
      */
     public abstract Animator<P, S> createAnimator(P parent, S skeleton);
 
-    @Override
     public void render(P parent, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         NecromancerRenderer renderer = NecromancerRenderDispatcher.getRenderer();
         this.render(parent, renderer, VeilRenderBridge.create(poseStack), packedLight, partialTick);
-        super.render(parent, entityYaw, partialTick, poseStack, renderer, packedLight);
     }
 
     /**
@@ -100,7 +99,11 @@ public abstract class NecromancerEntityRenderer<P extends Entity & SkeletonParen
     }
 
     @Override
-    public ResourceLocation getTextureLocation(P entity) {
+    public EntityRenderState createRenderState() {
+        return new EntityRenderState();
+    }
+
+    public Identifier getTextureLocation(P entity) {
         throw new UnsupportedOperationException();
     }
 }

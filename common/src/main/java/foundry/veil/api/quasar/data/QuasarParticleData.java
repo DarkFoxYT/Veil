@@ -9,7 +9,7 @@ import foundry.veil.api.quasar.particle.SpriteData;
 import foundry.veil.api.quasar.registry.RenderStyleRegistry;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.RegistryFileCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -104,7 +104,7 @@ public record QuasarParticleData(boolean shouldCollide,
         return builder;
     }
 
-    public @Nullable ResourceLocation getRegistryId() {
-        return QuasarParticles.registryAccess().registry(QuasarParticles.PARTICLE_DATA).map(registry -> registry.getKey(this)).orElse(null);
+    public @Nullable Identifier getRegistryId() {
+        return QuasarParticles.registryAccess().lookup(QuasarParticles.PARTICLE_DATA).map(registry -> registry.getKey(this)).orElse(null);
     }
 }

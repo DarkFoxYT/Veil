@@ -9,7 +9,7 @@
 //import foundry.veil.api.client.render.light.renderer.LightRenderer;
 //import foundry.veil.api.client.render.light.renderer.LightTypeRenderer;
 //import foundry.veil.api.client.render.vertex.VertexArrayBuilder;
-//import net.minecraft.resources.ResourceLocation;
+//import net.minecraft.resources.Identifier;
 //import org.jetbrains.annotations.ApiStatus;
 //
 //import java.util.Set;
@@ -17,7 +17,7 @@
 //@ApiStatus.Internal
 //public class IndirectPointLightRenderer extends IndirectLightRenderer<PointLightData> {
 //
-//    private static final ResourceLocation SHADER = Veil.veilPath("light/point");
+//    private static final Identifier SHADER = Veil.veilPath("light/point");
 //
 //    public IndirectPointLightRenderer() {
 //        super(Float.BYTES * 7, 4, 0, 6);
@@ -25,7 +25,7 @@
 //
 //    @Override
 //    protected MeshData createMesh() {
-//        Tesselator tesselator = RenderSystem.renderThreadTesselator();
+//        Tesselator tesselator = Tesselator.getInstance();
 //        BufferBuilder bufferBuilder = tesselator.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION);
 //
 //        // High-res mesh

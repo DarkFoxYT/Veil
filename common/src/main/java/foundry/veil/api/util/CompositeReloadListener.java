@@ -3,7 +3,6 @@ package foundry.veil.api.util;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Unit;
-import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,7 +32,7 @@ public final class CompositeReloadListener implements PreparableReloadListener {
         if (listeners.length == 0) {
             return new PreparableReloadListener() {
                 @Override
-                public @NotNull CompletableFuture<Void> reload(@NotNull PreparationBarrier preparationBarrier, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller prepareProfiler, @NotNull ProfilerFiller applyProfiler, @NotNull Executor backgroundExecutor, @NotNull Executor gameExecutor) {
+                public @NotNull CompletableFuture<Void> reload(@NotNull SharedState sharedState, @NotNull Executor backgroundExecutor, @NotNull PreparationBarrier preparationBarrier, @NotNull Executor gameExecutor) {
                     return preparationBarrier.wait(null);
                 }
 
@@ -50,7 +49,7 @@ public final class CompositeReloadListener implements PreparableReloadListener {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> reload(@NotNull PreparationBarrier preparationBarrier, @NotNull ResourceManager resourceManager, @NotNull ProfilerFiller prepareProfiler, @NotNull ProfilerFiller applyProfiler, @NotNull Executor backgroundExecutor, @NotNull Executor gameExecutor) {
+    public @NotNull CompletableFuture<Void> reload(@NotNull SharedState sharedState, @NotNull Executor backgroundExecutor, @NotNull PreparationBarrier preparationBarrier, @NotNull Executor gameExecutor) {
         CompletableFuture<Unit> allComplete = new CompletableFuture<>();
         Set<PreparableReloadListener> preparingListeners = new HashSet<>(Arrays.asList(this.listeners));
 
@@ -65,7 +64,7 @@ public final class CompositeReloadListener implements PreparableReloadListener {
                     return allComplete.thenApply(unused -> backgroundResult);
                 }
             };
-            futures.add(listener.reload(barrier, resourceManager, prepareProfiler, applyProfiler, backgroundExecutor, gameExecutor));
+            futures.add(listener.reload(sharedState, backgroundExecutor, barrier, gameExecutor));
         }
 
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));

@@ -14,7 +14,7 @@ import foundry.veil.api.flare.modifier.PropertyModifier;
 import foundry.veil.api.util.CodecUtil;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -81,7 +81,7 @@ public final class FlareEffectLayer {
         materialProperties.put("_Time", TimeProperty.INSTANCE);
     }
 
-    public void render(EffectHost host, MatrixStack matrixStack, float partialTick, @Nullable Map<ResourceLocation, BakedShell> shellOverrides) {
+    public void render(EffectHost host, MatrixStack matrixStack, float partialTick, @Nullable Map<Identifier, BakedShell> shellOverrides) {
         ControllerManager controllerManager = FlareEffectManager.getInstance().getControllerManager();
 
         for (PropertyModifier<?> modifier : this.originalModifiers) {

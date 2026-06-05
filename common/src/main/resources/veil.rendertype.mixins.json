@@ -5,12 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "foundry.veil.VeilMixinPluginImpl",
   "client": [
-    "accessor.RenderStateShardAccessor",
     "accessor.RenderTypeAccessor",
-    "accessor.RenderTypeBufferSourceAccessor",
-    "client.CompositeStateBuilderMixin",
-    "client.CompositeStateMixin",
-    "client.RenderTypeMixin"
+    "accessor.RenderTypeBufferSourceAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

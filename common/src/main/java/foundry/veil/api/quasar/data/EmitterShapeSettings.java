@@ -6,7 +6,7 @@ import foundry.veil.api.quasar.emitters.shape.EmitterShape;
 import foundry.veil.api.util.CodecUtil;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.RegistryFileCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
@@ -30,7 +30,7 @@ public record EmitterShapeSettings(EmitterShape shape,
         return this.shape.getPoint(randomSource, this.dimensions, this.rotation, pos, this.fromSurface);
     }
 
-    public @Nullable ResourceLocation getRegistryId() {
-        return QuasarParticles.registryAccess().registry(QuasarParticles.EMITTER_SHAPE_SETTINGS).map(registry -> registry.getKey(this)).orElse(null);
+    public @Nullable Identifier getRegistryId() {
+        return QuasarParticles.registryAccess().lookup(QuasarParticles.EMITTER_SHAPE_SETTINGS).map(registry -> registry.getKey(this)).orElse(null);
     }
 }
