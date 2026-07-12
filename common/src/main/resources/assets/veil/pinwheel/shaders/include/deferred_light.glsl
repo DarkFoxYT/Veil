@@ -15,7 +15,14 @@ uniform int HasNormalSampler;
 const float DEFERRED_SKY_DEPTH = 0.99999;
 const float DEFERRED_MIN_RANGE = 0.001;
 const float DEFERRED_LIGHT_EPSILON = 0.0001;
-const int DEFERRED_GODRAY_STEPS = 10;
+// Sixteen low-cost samples with a stable interleaved offset look substantially
+// smoother than a visibly banded fixed ten-sample march. The offset is screen
+// stable, so it does not shimmer while the camera is still.
+const int DEFERRED_GODRAY_STEPS = 16;
+
+float deferredInterleavedNoise(vec2 pixel) {
+    return fract(52.9829189 * fract(dot(pixel, vec2(0.06711056, 0.00583715))));
+}
 
 struct DeferredSurface {
     vec3 position;
@@ -267,8 +274,9 @@ vec3 deferredEvaluateSpotGodRays(vec2 uv, float sceneDepth, DeferredSpotLight li
     float rayLength = rayEnd - rayStart;
     float stepLength = rayLength / float(DEFERRED_GODRAY_STEPS);
     float beam = 0.0;
+    float jitter = deferredInterleavedNoise(gl_FragCoord.xy);
     for (int i = 0; i < DEFERRED_GODRAY_STEPS; i++) {
-        float rayT = rayStart + (float(i) + 0.5) * stepLength;
+        float rayT = rayStart + (float(i) + jitter) * stepLength;
         vec3 samplePosition = rayOrigin + rayDirection * rayT;
         float cone = deferredSpotConeFalloff(samplePosition, light);
         if (cone <= 0.0) {
@@ -283,18 +291,30 @@ vec3 deferredEvaluateSpotGodRays(vec2 uv, float sceneDepth, DeferredSpotLight li
             attenuation *= mix(1.0, visibility, clamp(light.outerConeSpecularOcclusion.z, 0.0, 1.0));
         }
 #endif
-        beam += cone * attenuation;
+        // A gentle distance weight prevents a harsh edge where the march hits
+        // its range limit and gives the beam a more natural volumetric falloff.
+        float distanceFade = smoothstep(1.0, 0.12, distanceToLight / range);
+        beam += cone * attenuation * distanceFade;
     }
 
     beam *= stepLength / range;
 
-    return light.colorFalloff.rgb * beam * godRayStrength * 0.48;
+    // Compress highlights so overlapping rays bloom smoothly instead of
+    // producing hard additive stripes.
+    beam = 1.0 - exp(-beam * 1.35);
+    return light.colorFalloff.rgb * beam * godRayStrength * 0.52;
 }
 
-vec3 deferredEvaluateDirectionalLight(DeferredSurface surface, vec3 lightDirection, vec3 lightColor, float specularStrength) {
+vec3 deferredEvaluateDirectionalLight(DeferredSurface surface, vec3 lightDirection, vec3 lightColor, float specularStrength, float shadowIntensity) {
     vec3 toLight = normalize(-lightDirection);
     float diffuse = max(dot(surface.normal, toLight), 0.0);
     diffuse = smoothstep(0.0, 0.55, diffuse);
+#ifndef VEIL_DEFERRED_NO_VOXEL_SHADOWS
+    if (shadowIntensity > DEFERRED_LIGHT_EPSILON) {
+        float visibility = voxelshadowDirectionalVisibility(surface.position + surface.normal * 0.035, toLight);
+        diffuse *= mix(1.0, visibility, clamp(shadowIntensity, 0.0, 1.0));
+    }
+#endif
 
     vec3 halfVector = normalize(toLight + surface.viewDirection);
     float specular = pow(max(dot(surface.normal, halfVector), 0.0), mix(72.0, 18.0, surface.roughness)) * specularStrength;

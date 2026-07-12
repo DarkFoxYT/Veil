@@ -2,6 +2,8 @@ package foundry.veil.impl.client.render.light;
 
 import foundry.veil.Veil;
 import foundry.veil.api.client.color.Colorc;
+import foundry.veil.api.client.render.CullFrustum;
+import foundry.veil.api.client.render.light.renderer.LightRenderer;
 import foundry.veil.api.client.render.light.data.PointLightData;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.ApiStatus;
@@ -9,6 +11,7 @@ import org.joml.Vector3dc;
 import org.joml.Vector3f;
 
 import java.nio.ByteBuffer;
+import net.minecraft.client.Minecraft;
 
 @ApiStatus.Internal
 public class DeferredPointLightRenderer extends DeferredLightRenderer<PointLightData> {
@@ -22,6 +25,16 @@ public class DeferredPointLightRenderer extends DeferredLightRenderer<PointLight
     public DeferredPointLightRenderer() {
         super(SHADER, BLOCK_NAME, LIGHT_SIZE);
         this.temperatureColor = new Vector3f();
+    }
+
+    @Override
+    public void prepareLights(LightRenderer lightRenderer, CullFrustum frustum) {
+        super.prepareLights(lightRenderer, frustum);
+        var camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        this.getMutablePreparedLights().sort((a, b) -> Double.compare(
+                a.getLightData().getPosition().distanceSquared(camera.x, camera.y, camera.z),
+                b.getLightData().getPosition().distanceSquared(camera.x, camera.y, camera.z)));
+        this.trimPreparedLights(MAX_VISIBLE_LIGHTS);
     }
 
     @Override

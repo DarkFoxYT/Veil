@@ -19,6 +19,7 @@ import foundry.veil.impl.client.render.dynamicbuffer.VanillaShaderCompiler;
 import foundry.veil.impl.client.render.pipeline.VeilBloomRenderer;
 import foundry.veil.impl.client.render.pipeline.VeilFirstPersonRenderer;
 import foundry.veil.impl.client.render.rendertype.DynamicRenderTypeManager;
+import foundry.veil.impl.client.render.light.ShadowMapManager;
 import foundry.veil.impl.client.render.shader.injection.ShaderInjectionManager;
 import foundry.veil.mixin.pipeline.accessor.PipelineReloadableResourceManagerAccessor;
 import net.minecraft.ChatFormatting;
@@ -64,6 +65,7 @@ public class VeilRenderer implements ResourceManagerReloadListener {
     private final EditorManager editorManager;
     private final CameraMatrices cameraMatrices;
     private final LightRenderer lightRenderer;
+    private final ShadowMapManager shadowMapManager;
     private final GuiInfo guiInfo;
 
     @ApiStatus.Internal
@@ -82,6 +84,8 @@ public class VeilRenderer implements ResourceManagerReloadListener {
         this.editorManager = new EditorManager(resourceManager);
         this.cameraMatrices = new CameraMatrices();
         this.lightRenderer = new LightRenderer();
+        this.shadowMapManager = new ShadowMapManager();
+        this.shadowMapManager.beginFrame();
         this.guiInfo = new GuiInfo();
 
         List<PreparableReloadListener> listeners = ((PipelineReloadableResourceManagerAccessor) resourceManager).getListeners();
@@ -269,6 +273,11 @@ public class VeilRenderer implements ResourceManagerReloadListener {
         return this.lightRenderer;
     }
 
+    /** @return The framebuffer-backed shadow-map target pool. */
+    public ShadowMapManager getShadowMapManager() {
+        return this.shadowMapManager;
+    }
+
     /**
      * @return The gui info instance
      */
@@ -290,6 +299,7 @@ public class VeilRenderer implements ResourceManagerReloadListener {
 
     @ApiStatus.Internal
     public void endFrame() {
+        this.shadowMapManager.beginFrame();
         this.framebufferManager.clear();
         this.dynamicBufferManager.endFrame();
         this.postProcessingManager.endFrame();
@@ -298,6 +308,7 @@ public class VeilRenderer implements ResourceManagerReloadListener {
     @ApiStatus.Internal
     public void free() {
         this.lightRenderer.free();
+        this.shadowMapManager.free();
         this.dynamicBufferManager.free();
         this.shaderManager.close();
         this.framebufferManager.free();

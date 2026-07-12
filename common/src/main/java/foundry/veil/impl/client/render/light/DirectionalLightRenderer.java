@@ -8,6 +8,7 @@ import foundry.veil.api.client.color.Colorc;
 import foundry.veil.api.client.render.CullFrustum;
 import foundry.veil.api.client.render.light.data.DirectionalLightData;
 import foundry.veil.api.client.render.light.renderer.LightRenderHandle;
+import foundry.veil.api.client.render.light.renderer.DDALightRenderer;
 import foundry.veil.api.client.render.light.renderer.LightRenderer;
 import foundry.veil.api.client.render.light.renderer.LightTypeRenderer;
 import foundry.veil.api.client.render.rendertype.VeilRenderType;
@@ -23,7 +24,7 @@ import java.util.Collection;
 import java.util.List;
 
 @ApiStatus.Internal
-public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLightData> {
+public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLightData>, DDALightRenderer<DirectionalLightData> {
 
     private static final Vector3f DIRECTION = new Vector3f();
     private static final Vector3f TEMPERATURE = new Vector3f();
@@ -104,6 +105,7 @@ public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLi
         Uniform lightColorUniform = shader.getUniform("LightColor");
         Uniform lightDirection = shader.getUniform("LightDirection");
         Uniform specularStrength = shader.getUniform("SpecularStrength");
+        Uniform shadowIntensity = shader.getUniform("ShadowIntensity");
         for (LightHandle handle : this.lights) {
             DirectionalLightData light = handle.getLightData();
 
@@ -124,6 +126,10 @@ public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLi
                 specularStrength.set(0.08F);
                 specularStrength.upload();
             }
+            if (shadowIntensity != null) {
+                shadowIntensity.set(light.isOcclusionEnabled() ? light.getShadowIntensity() : 0.0F);
+                shadowIntensity.upload();
+            }
 
             this.vertexArray.draw();
         }
@@ -137,6 +143,11 @@ public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLi
     @Override
     public int getVisibleLights() {
         return this.lights.size();
+    }
+
+    @Override
+    public void uploadVoxelGridUniforms(int voxelGridTexture, org.joml.Vector3fc voxelGridOrigin) {
+        DDALightRenderer.uploadVoxelGridUniforms(Veil.veilPath("light/directional"), voxelGridTexture, voxelGridOrigin);
     }
 
     @Override

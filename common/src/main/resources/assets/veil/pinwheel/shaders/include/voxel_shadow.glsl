@@ -168,3 +168,24 @@ float voxelshadowSpotVisibility(vec3 fragPos, vec3 lightPos) {
 float voxelshadowSpotBeamVisibility(vec3 fragPos, vec3 lightPos) {
     return voxelshadowTraceVisibility(fragPos, lightPos, 0.82);
 }
+
+// Directional lights have no finite endpoint. Trace to the edge of the shared
+// shadow map and use a compact cross filter to avoid the stair-stepped look of
+// a single voxel ray. This keeps directional shadows on the same bounded map
+// and update budget as every other Veil light.
+float voxelshadowDirectionalVisibility(vec3 fragPos, vec3 toLight) {
+    vec3 direction = normalize(toLight);
+    float mapDistance = float(VOXELSHADOW_GRID_SIZE) * max(GridCellSize, 0.03125) * 1.75;
+    vec3 lightPos = fragPos + direction * mapDistance;
+    vec3 up = abs(direction.y) < 0.82 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(direction, up));
+    vec3 bitangent = normalize(cross(direction, tangent));
+    float texel = max(GridCellSize, 0.03125) * 0.72;
+
+    float visibility = voxelshadowTraceVisibility(fragPos, lightPos, 1.15) * 0.52;
+    visibility += voxelshadowTraceVisibility(fragPos + tangent * texel, lightPos, 0.92) * 0.12;
+    visibility += voxelshadowTraceVisibility(fragPos - tangent * texel, lightPos, 0.92) * 0.12;
+    visibility += voxelshadowTraceVisibility(fragPos + bitangent * texel, lightPos, 0.92) * 0.12;
+    visibility += voxelshadowTraceVisibility(fragPos - bitangent * texel, lightPos, 0.92) * 0.12;
+    return clamp(visibility, 0.0, 1.0);
+}

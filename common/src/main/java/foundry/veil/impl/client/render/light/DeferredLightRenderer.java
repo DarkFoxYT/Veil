@@ -15,6 +15,7 @@ import foundry.veil.api.client.render.shader.block.DynamicShaderBlock;
 import foundry.veil.api.client.render.shader.block.ShaderBlock;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.nio.ByteBuffer;
@@ -24,6 +25,9 @@ import java.util.List;
 
 @ApiStatus.Internal
 public abstract class DeferredLightRenderer<T extends LightData & DDALightData> implements DDALightRenderer<T> {
+
+    /** A full-screen deferred pass has a finite useful light budget. */
+    protected static final int MAX_VISIBLE_LIGHTS = 128;
 
     private final ResourceLocation shaderId;
     private final String blockName;
@@ -143,6 +147,18 @@ public abstract class DeferredLightRenderer<T extends LightData & DDALightData> 
         return this.visibleLights;
     }
 
+    /** Internal mutable view used for deterministic importance ordering. */
+    protected List<LightHandle> getMutablePreparedLights() {
+        return this.visibleLights;
+    }
+
+    /** Applies the GPU light budget after a subclass has ranked candidates. */
+    protected void trimPreparedLights(int limit) {
+        if (this.visibleLights.size() > limit) {
+            this.visibleLights.subList(limit, this.visibleLights.size()).clear();
+        }
+    }
+
     @Override
     public int getVisibleLights() {
         return this.visibleLights.size();
@@ -161,7 +177,7 @@ public abstract class DeferredLightRenderer<T extends LightData & DDALightData> 
         this.freed = true;
     }
 
-    private class LightHandle implements LightRenderHandle<T> {
+    protected class LightHandle implements LightRenderHandle<T> {
 
         private final T data;
 

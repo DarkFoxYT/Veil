@@ -13,6 +13,7 @@ import foundry.veil.api.client.render.light.renderer.LightRenderHandle;
 import foundry.veil.api.client.render.light.renderer.LightRenderer;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector3dc;
 import org.joml.Vector3f;
@@ -66,6 +67,15 @@ public class DeferredSpotLightRenderer implements DDALightRenderer<SpotLightData
             if (light.data.isVisible(frustum)) {
                 this.visibleLights.add(light);
             }
+        }
+        // Each spot currently draws a full-screen volumetric pass. Rank and
+        // bound it more aggressively than batched point lights.
+        var camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        this.visibleLights.sort((a, b) -> Double.compare(
+                a.data.getPosition().distanceSquared(camera.x, camera.y, camera.z),
+                b.data.getPosition().distanceSquared(camera.x, camera.y, camera.z)));
+        if (this.visibleLights.size() > 48) {
+            this.visibleLights.subList(48, this.visibleLights.size()).clear();
         }
     }
 

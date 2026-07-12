@@ -4,6 +4,7 @@ import foundry.veil.api.client.color.Colorc;
 import foundry.veil.api.client.editor.EditorAttributeProvider;
 import foundry.veil.api.client.registry.LightTypeRegistry;
 import foundry.veil.api.client.render.CullFrustum;
+import foundry.veil.api.client.render.light.DDALightData;
 import imgui.ImGui;
 import net.minecraft.client.Camera;
 import org.joml.Vector3f;
@@ -14,12 +15,43 @@ import org.joml.Vector3fc;
  *
  * @since 2.0.0
  */
-public class DirectionalLightData extends LightData implements EditorAttributeProvider {
+public class DirectionalLightData extends LightData implements EditorAttributeProvider, DDALightData {
 
     protected final Vector3f direction;
+    protected float shadowIntensity;
+    protected boolean occlusionEnabled;
 
     public DirectionalLightData() {
         this.direction = new Vector3f(0.0F, -1.0F, 0.0F);
+        this.shadowIntensity = 1.0F;
+        this.occlusionEnabled = false;
+    }
+
+    @Override
+    public boolean isOcclusionEnabled() {
+        return this.occlusionEnabled;
+    }
+
+    @Override
+    public float getShadowIntensity() {
+        return this.shadowIntensity;
+    }
+
+    public DirectionalLightData setOcclusionEnabled(boolean enabled) {
+        if (this.occlusionEnabled != enabled) {
+            this.occlusionEnabled = enabled;
+            this.markDirty();
+        }
+        return this;
+    }
+
+    public DirectionalLightData setShadowIntensity(float intensity) {
+        intensity = Math.max(0.0F, Math.min(1.0F, intensity));
+        if (Float.compare(this.shadowIntensity, intensity) != 0) {
+            this.shadowIntensity = intensity;
+            this.markDirty();
+        }
+        return this;
     }
 
     /**
@@ -120,5 +152,12 @@ public class DirectionalLightData extends LightData implements EditorAttributePr
         }
         ImGui.sameLine(0, ImGui.getStyle().getItemInnerSpacingX());
         ImGui.text("direction");
+        if (ImGui.checkbox("Dynamic shadows", this.occlusionEnabled)) {
+            this.setOcclusionEnabled(!this.occlusionEnabled);
+        }
+        float[] shadow = {this.shadowIntensity};
+        if (ImGui.sliderFloat("Shadow intensity", shadow, 0.0F, 1.0F)) {
+            this.setShadowIntensity(shadow[0]);
+        }
     }
 }
