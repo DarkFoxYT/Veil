@@ -40,7 +40,7 @@ import java.util.function.Consumer;
 public class VeilImGuiUtil {
 
     private static final ImGuiCharSink IM_GUI_CHAR_SINK = new ImGuiCharSink();
-    private static final StringSplitter IM_GUI_SPLITTER = new StringSplitter((charId, style) -> getStyleFont(style).getCharAdvance(charId));
+    private static final StringSplitter IM_GUI_SPLITTER = ImGuiMC.getStringSplitter();
 
     public static final ResourceLocation ICON_FONT = Veil.veilPath("remixicon");
 
@@ -101,7 +101,7 @@ public class VeilImGuiUtil {
      * @param code The icon code (ex. &#xED0F;)
      */
     public static void icon(int code) {
-        ImGui.pushFont(ImGuiMC.getFont(ICON_FONT, false, false));
+        ImGui.pushFont(ImGuiMC.getFont(ICON_FONT, false, false), 0.0F);
         ImGui.text("" + (char) code);
         ImGui.popFont();
     }
@@ -113,7 +113,7 @@ public class VeilImGuiUtil {
      * @param color The color of the icon
      */
     public static void icon(int code, int color) {
-        ImGui.pushFont(ImGuiMC.getFont(ICON_FONT, false, false));
+        ImGui.pushFont(ImGuiMC.getFont(ICON_FONT, false, false), 0.0F);
         ImGui.textColored(color, "" + (char) code);
         ImGui.popFont();
     }
@@ -270,7 +270,7 @@ public class VeilImGuiUtil {
         public void finish() {
             if (!this.buffer.isEmpty()) {
                 ImGui.pushStyleVar(ImGuiStyleVar.ItemSpacing, 0, 0);
-                ImGui.pushFont(this.font);
+                ImGui.pushFont(this.font, 0.0F);
                 ImGui.textColored(0xFF000000 | (this.textColor & 0xFF0000) >> 16 | (this.textColor & 0xFF00) | (this.textColor & 0xFF) << 16, this.buffer.toString());
 
                 if (ImGui.isItemClicked() && this.clickEvent != null) {

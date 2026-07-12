@@ -1,0 +1,88 @@
+{
+    "schemaVersion":  1,
+    "id":  "veil",
+    "version":  "4.2.1",
+    "name":  "Veil",
+    "description":  "Veil is a sophisticated collection of tools and utilities designed to facilitate advanced rendering for Minecraft mod developers. Our goal is to enable more modern game-engine level content in Java Minecraft, pushing the boundaries of what is possible in modding.",
+    "icon":  "icon.png",
+    "authors":  [
+                    "amo",
+                    "Cappin",
+                    "Ocelot"
+                ],
+    "contributors":  [
+                         "Farcr (Artist)"
+                     ],
+    "contact":  {
+                    "homepage":  "https://modrinth.com/project/veil",
+                    "issues":  "https://github.com/FoundryMC/Veil/issues",
+                    "sources":  "https://github.com/FoundryMC/Veil"
+                },
+    "license":  "LGPLv3",
+    "environment":  "*",
+    "entrypoints":  {
+                        "main":  [
+                                     "foundry.veil.fabric.VeilFabric"
+                                 ],
+                        "client":  [
+                                       "foundry.veil.fabric.VeilFabricClient"
+                                   ]
+                    },
+    "custom":  {
+                   "fabric-renderer-indigo:force_compatibility":  true,
+                   "modmenu":  {
+                                   "links":  {
+                                                 "modmenu.discord":  "https://discord.com/invite/2aqTX9QWKU",
+                                                 "modmenu.modrinth":  "https://modrinth.com/mod/veil",
+                                                 "modmenu.wiki":  "https://github.com/FoundryMC/Veil/wiki"
+                                             }
+                               }
+               },
+    "mixins":  [
+                   "veil.command.mixins.json",
+                   "veil.debug.mixins.json",
+                   "veil.dynamicbuffer.mixins.json",
+                   "veil.fix.mixins.json",
+                   "veil.framebuffer.mixins.json",
+                   "veil.network.mixins.json",
+                   "veil.necromancer.mixins.json",
+                   "veil.performance.mixins.json",
+                   "veil.perspective.mixins.json",
+                   "veil.pipeline.mixins.json",
+                   "veil.quasar.mixins.json",
+                   "veil.registry.mixins.json",
+                   "veil.rendertype.mixins.json",
+                   "veil.resource.mixins.json",
+                   "veil.shader.mixins.json",
+                   "veil.scheduler.mixins.json",
+                   "veil.fabric.mixins.json"
+               ],
+    "depends":  {
+                    "fabricloader":  "\u003e=0.19.3",
+                    "fabric-registry-sync-v0":  "\u003e=0.116.12+1.21.1",
+                    "fabric-lifecycle-events-v1":  "\u003e=0.116.12+1.21.1",
+                    "fabric-resource-loader-v0":  "\u003e=0.116.12+1.21.1",
+                    "fabric-networking-api-v1":  "\u003e=0.116.12+1.21.1",
+                    "fabric-command-api-v2":  "\u003e=0.116.12+1.21.1",
+                    "fabric-key-binding-api-v1":  "\u003e=0.116.12+1.21.1",
+                    "fabric-rendering-v1":  "\u003e=0.116.12+1.21.1",
+                    "fabric-renderer-api-v1":  "\u003e=0.116.12+1.21.1",
+                    "minecraft":  "~1.21.1",
+                    "java":  "\u003e=21"
+                },
+    "breaks":  {
+                   "embeddium":  "*",
+                   "celeritas":  "*",
+                   "sodium":  "\u003c0.8.12-beta.2+mc1.21.1",
+                   "imguimc":  "\u003c2.0.1"
+               },
+    "accessWidener":  "veil.accesswidener",
+    "jars":  [
+                 {
+                     "file":  "META-INF/jars/glsl-processor-0.2.3.jar"
+                 },
+                 {
+                     "file":  "META-INF/jars/molang-compiler-3.1.1.19.jar"
+                 }
+             ]
+}

@@ -75,7 +75,7 @@ public class ResourceOverrideEditor implements ResourceFileEditor<VeilResource<?
 
         VeilResourceManager resourceManager = this.environment.getResourceManager();
         for (Path writePath : this.options) {
-            if (ImGui.selectable(writePath.toString(), false, ImGuiSelectableFlags.AllowItemOverlap)) {
+            if (ImGui.selectable(writePath.toString(), false, ImGuiSelectableFlags.AllowOverlap)) {
                 Veil.LOGGER.info("Writing to {}", writePath);
 
                 VeilResourceInfo info = this.veilResource.resourceInfo();

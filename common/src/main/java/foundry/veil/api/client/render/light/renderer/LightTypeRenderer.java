@@ -56,6 +56,13 @@ public interface LightTypeRenderer<T extends LightData> extends NativeResource {
     Collection<? extends LightRenderHandle<T>> getLights();
 
     /**
+     * @return The lights prepared for the next draw call
+     */
+    default Collection<? extends LightRenderHandle<T>> getPreparedLights() {
+        return this.getLights();
+    }
+
+    /**
      * @return The number of lights visible last frame
      */
     int getVisibleLights();

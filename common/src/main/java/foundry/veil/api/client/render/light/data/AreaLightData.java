@@ -8,6 +8,7 @@ import foundry.veil.api.client.render.light.DDALightData;
 import foundry.veil.api.client.render.light.InstancedLightData;
 import imgui.ImGui;
 import net.minecraft.client.Camera;
+import net.minecraft.core.Position;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
@@ -28,15 +29,18 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
     protected final Vector3d position;
     protected final Quaternionf orientation;
     private final Matrix4d matrix;
+    private final Vector3f temperatureColor;
 
     protected final Vector2f size;
 
     protected float angle;
     protected float distance;
+    protected float shadowIntensity;
     protected boolean occlusionEnabled;
 
     public AreaLightData() {
         this.matrix = new Matrix4d();
+        this.temperatureColor = new Vector3f();
         this.position = new Vector3d();
         this.orientation = new Quaternionf();
 
@@ -44,6 +48,7 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
 
         this.angle = (float) Math.toRadians(45);
         this.distance = 1.0F;
+        this.shadowIntensity = 1.0F;
         this.occlusionEnabled = false;
     }
 
@@ -70,10 +75,40 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
     }
 
     /**
+     * Copies this light's position into the specified vector.
+     *
+     * @param store The vector to store the position in
+     * @return The passed in vector
+     */
+    public Vector3d getPosition(Vector3d store) {
+        return store.set(this.position);
+    }
+
+    /**
      * @return The current orientation of the light
      */
     public Quaternionf getOrientation() {
         return this.orientation;
+    }
+
+    /**
+     * Copies this light's orientation into the specified quaternion.
+     *
+     * @param store The quaternion to store the orientation in
+     * @return The passed in quaternion
+     */
+    public Quaternionf getOrientation(Quaternionf store) {
+        return store.set(this.orientation);
+    }
+
+    /**
+     * Stores this light's orientation as XYZ Euler angles in radians.
+     *
+     * @param store The vector to store the angles in
+     * @return The passed in vector
+     */
+    public Vector3f getRotationXYZ(Vector3f store) {
+        return this.orientation.getEulerAnglesXYZ(store);
     }
 
     /**
@@ -102,6 +137,10 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
         return this.occlusionEnabled;
     }
 
+    public float getShadowIntensity() {
+        return this.shadowIntensity;
+    }
+
     /**
      * Sets the size of the light's surface
      *
@@ -109,9 +148,51 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
      * @param y The width, in blocks, of the light's surface.
      */
     public AreaLightData setSize(double x, double y) {
+        if (Float.compare(this.size.x, (float) x) == 0 && Float.compare(this.size.y, (float) y) == 0) {
+            return this;
+        }
         this.size.set(x, y);
         this.markDirty();
         return this;
+    }
+
+    public AreaLightData setPosition(Vector3dc pos) {
+        return this.setPosition(pos.x(), pos.y(), pos.z());
+    }
+
+    public AreaLightData setPosition(Vector3fc pos) {
+        return this.setPosition(pos.x(), pos.y(), pos.z());
+    }
+
+    public AreaLightData setPosition(Position pos) {
+        return this.setPosition(pos.x(), pos.y(), pos.z());
+    }
+
+    public AreaLightData setPosition(double x, double y, double z) {
+        if (Double.compare(this.position.x, x) == 0 &&
+                Double.compare(this.position.y, y) == 0 &&
+                Double.compare(this.position.z, z) == 0) {
+            return this;
+        }
+        this.position.set(x, y, z);
+        this.markDirty();
+        return this;
+    }
+
+    public AreaLightData setOrientation(Quaternionfc orientation) {
+        if (Float.compare(this.orientation.x(), orientation.x()) == 0 &&
+                Float.compare(this.orientation.y(), orientation.y()) == 0 &&
+                Float.compare(this.orientation.z(), orientation.z()) == 0 &&
+                Float.compare(this.orientation.w(), orientation.w()) == 0) {
+            return this;
+        }
+        this.orientation.set(orientation);
+        this.markDirty();
+        return this;
+    }
+
+    public AreaLightData setRotation(float xRot, float yRot, float zRot) {
+        return this.setOrientation(new Quaternionf().rotationXYZ(xRot, yRot, zRot));
     }
 
     /**
@@ -120,6 +201,9 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
      * @param angle The maximum angle of the light's influence in radians
      */
     public AreaLightData setAngle(float angle) {
+        if (Float.compare(this.angle, angle) == 0) {
+            return this;
+        }
         this.angle = angle;
         this.markDirty();
         return this;
@@ -131,13 +215,29 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
      * @param distance The maximum area of influence for the light
      */
     public AreaLightData setDistance(float distance) {
+        if (Float.compare(this.distance, distance) == 0) {
+            return this;
+        }
         this.distance = distance;
         this.markDirty();
         return this;
     }
 
     public AreaLightData setOcclusionEnabled(boolean occlusionEnabled) {
+        if (this.occlusionEnabled == occlusionEnabled) {
+            return this;
+        }
         this.occlusionEnabled = occlusionEnabled;
+        this.markDirty();
+        return this;
+    }
+
+    public AreaLightData setShadowIntensity(float shadowIntensity) {
+        shadowIntensity = Math.max(0.0F, shadowIntensity);
+        if (Float.compare(this.shadowIntensity, shadowIntensity) == 0) {
+            return this;
+        }
+        this.shadowIntensity = shadowIntensity;
         this.markDirty();
         return this;
     }
@@ -173,20 +273,27 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
     }
 
     @Override
+    public AreaLightData setTemperature(float temperature) {
+        super.setTemperature(temperature);
+        return this;
+    }
+
+    @Override
     public void store(ByteBuffer buffer) {
         this.matrix.identity().rotation(this.orientation).translate(this.position).getFloats(buffer.position(), buffer);
         buffer.position(buffer.position() + Float.BYTES * 16);
 
-        buffer.putFloat(this.color.red() * this.brightness);
-        buffer.putFloat(this.color.green() * this.brightness);
-        buffer.putFloat(this.color.blue() * this.brightness);
+        this.getTemperatureColor(this.temperatureColor);
+        buffer.putFloat(this.color.red() * this.brightness * this.temperatureColor.x());
+        buffer.putFloat(this.color.green() * this.brightness * this.temperatureColor.y());
+        buffer.putFloat(this.color.blue() * this.brightness * this.temperatureColor.z());
 
         this.size.get(buffer.position(), buffer);
         buffer.position(buffer.position() + Float.BYTES * 2);
 
         buffer.putShort((short) Mth.clamp((int) (this.angle * MAX_ANGLE_SIZE), 0, 65535));
         buffer.putFloat(this.distance);
-        buffer.putFloat(this.occlusionEnabled ? 1.0F : 0.0F);
+        buffer.putFloat(this.occlusionEnabled ? this.shadowIntensity : 0.0F);
     }
 
     @Override
@@ -202,17 +309,16 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
     }
 
     @Override
-    public LightData setTo(Camera camera) {
+    public AreaLightData setTo(Camera camera) {
         Vec3 pos = camera.getPosition();
-        this.position.set(pos.x, pos.y, pos.z);
-        this.orientation.identity().lookAlong(camera.getLookVector().mul(-1), camera.getUpVector());
-        this.markDirty();
+        this.setPosition(pos.x, pos.y, pos.z);
+        this.setOrientation(new Quaternionf().lookAlong(camera.getLookVector().mul(-1), camera.getUpVector()));
         return this;
     }
 
     @Override
     public void renderImGuiAttributes() {
-        Vector3f orientationAngles = this.orientation.normalize().getEulerAnglesXYZ(new Vector3f());
+        Vector3f orientationAngles = new Quaternionf(this.orientation).normalize().getEulerAnglesXYZ(new Vector3f());
 
         float[] editSize = new float[]{this.size.x(), this.size.y()};
 
@@ -254,18 +360,15 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
 
         ImGui.pushItemWidth(totalWidth / 3.0F - (ImGui.getStyle().getItemInnerSpacingX() * 0.58F));
         if (ImGui.sliderAngle("##xrot", editXRot)) {
-            this.orientation.identity().rotationXYZ(editXRot[0], orientationAngles.y(), orientationAngles.z());
-            this.markDirty();
+            this.setRotation(editXRot[0], orientationAngles.y(), orientationAngles.z());
         }
         ImGui.sameLine(0, ImGui.getStyle().getItemInnerSpacingX());
         if (ImGui.sliderAngle("##yrot", editYRot)) {
-            this.orientation.identity().rotationXYZ(orientationAngles.x(), editYRot[0], orientationAngles.z());
-            this.markDirty();
+            this.setRotation(orientationAngles.x(), editYRot[0], orientationAngles.z());
         }
         ImGui.sameLine(0, ImGui.getStyle().getItemInnerSpacingX());
         if (ImGui.sliderAngle("##zrot", editZRot)) {
-            this.orientation.identity().rotationXYZ(orientationAngles.x(), orientationAngles.y(), editZRot[0]);
-            this.markDirty();
+            this.setRotation(orientationAngles.x(), orientationAngles.y(), editZRot[0]);
         }
 
         ImGui.popItemWidth();
@@ -285,6 +388,10 @@ public class AreaLightData extends LightData implements InstancedLightData, DDAL
         if (ImGui.checkbox("Occluded", this.occlusionEnabled)) {
             this.occlusionEnabled = !this.occlusionEnabled;
             this.markDirty();
+        }
+        float[] editShadowIntensity = new float[]{this.shadowIntensity};
+        if (ImGui.dragScalar("Shadow intensity", editShadowIntensity, 0.02F, 0.0F)) {
+            this.setShadowIntensity(editShadowIntensity[0]);
         }
     }
 }

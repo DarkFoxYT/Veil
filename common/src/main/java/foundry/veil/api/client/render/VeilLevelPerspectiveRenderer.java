@@ -117,11 +117,13 @@ public final class VeilLevelPerspectiveRenderer {
 
         int backupWidth = window.getWidth();
         int backupHeight = window.getHeight();
-        if (!FlashbackCompat.isLoaded()) {
+        boolean flashbackLoaded = FlashbackCompat.isLoaded();
+        boolean restoreFlashback = false;
+        if (!flashbackLoaded) {
             window.setWidth(framebuffer.getWidth());
             window.setHeight(framebuffer.getHeight());
         } else {
-            FlashbackAccess.backup(BACKUP_FLASHBACK_PROJECTION, BACKUP_FLASHBACK_CAMERA);
+            restoreFlashback = FlashbackAccess.backup(BACKUP_FLASHBACK_PROJECTION, BACKUP_FLASHBACK_CAMERA);
         }
 
         final Object backupPipeline = IrisPipelineAccess.getPipeline(levelRenderer);
@@ -205,10 +207,10 @@ public final class VeilLevelPerspectiveRenderer {
             RenderSystem.setShaderFogEnd(backupFogEnd);
             RenderSystem.setShaderFogShape(backupFogShape);
 
-            if (!FlashbackCompat.isLoaded()) {
+            if (!flashbackLoaded) {
                 window.setWidth(backupWidth);
                 window.setHeight(backupHeight);
-            } else {
+            } else if (restoreFlashback) {
                 FlashbackAccess.restore(BACKUP_FLASHBACK_PROJECTION, BACKUP_FLASHBACK_CAMERA);
             }
 

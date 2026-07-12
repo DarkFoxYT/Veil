@@ -7,6 +7,7 @@ import foundry.veil.api.client.render.profiler.RenderProfilerCounter;
 import foundry.veil.impl.client.render.profiler.VeilRenderProfilerImpl;
 import imgui.ImGui;
 import imgui.extension.implot.ImPlot;
+import imgui.extension.implot.ImPlotSpec;
 import imgui.extension.implot.flag.*;
 import imgui.type.ImBoolean;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -102,12 +103,21 @@ public class PipelineStatisticsViewer implements Inspector {
                             ImPlot.setupAxesLimits(0, HISTORY_LENGTH, 0, Math.max(max * 1.1, 10), ImPlotCond.Always);
                             ImPlot.setupAxisFormat(ImPlotAxis.Y1, "%3.0f");
 
-                            ImPlot.pushStyleColor(ImPlotCol.Line, VeilImGuiUtil.colorOf(statistic.name()));
                             ImPlot.pushStyleVar(ImPlotStyleVar.PlotPadding, 0.0F, 0.0F);
                             ImPlot.pushStyleVar(ImPlotStyleVar.LabelPadding, 0.0F, 0.0F);
-                            ImPlot.plotLine(statistic.name(), values);
+                            ImPlotSpec plotSpec = new ImPlotSpec();
+                            try {
+                                int color = VeilImGuiUtil.colorOf(statistic.name());
+                                plotSpec.setLineColor(
+                                        ((color >> 16) & 0xFF) / 255.0F,
+                                        ((color >> 8) & 0xFF) / 255.0F,
+                                        (color & 0xFF) / 255.0F,
+                                        ((color >>> 24) & 0xFF) / 255.0F);
+                                ImPlot.plotLine(statistic.name(), values, 1.0, 0.0, plotSpec);
+                            } finally {
+                                plotSpec.destroy();
+                            }
                             ImPlot.popStyleVar();
-                            ImPlot.popStyleColor();
 
                             ImPlot.endPlot();
                         }

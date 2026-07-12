@@ -73,7 +73,7 @@ public class EditorManager implements VeilEditorEnvironment, PreparableReloadLis
                     Minecraft.getInstance());
         }
 
-        ImGui.pushFont(ImGuiMC.getFont(DEFAULT_FONT, false, false));
+        ImGui.pushFont(ImGuiMC.getFont(DEFAULT_FONT, false, false), 0.0F);
 
         if (ImGui.beginMainMenuBar()) {
             ImFont font = ImGui.getFont();
@@ -154,7 +154,7 @@ public class EditorManager implements VeilEditorEnvironment, PreparableReloadLis
             return;
         }
 
-        ImGui.pushFont(ImGuiMC.getFont(DEFAULT_FONT, false, false));
+        ImGui.pushFont(ImGuiMC.getFont(DEFAULT_FONT, false, false), 0.0F);
 
         for (Map.Entry<Inspector, ImBoolean> entry : this.editors.entrySet()) {
             Inspector inspector = entry.getKey();

@@ -1255,7 +1255,7 @@ public final class VeilRenderSystem {
 
     @ApiStatus.Internal
     public static void renderPost(@Nullable VeilRenderLevelStageEvent.Stage stage) {
-        if (VeilBloomRenderer.hasRendered() && (stage == VeilRenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || stage == VeilRenderLevelStageEvent.Stage.AFTER_LEVEL)) {
+        if (VeilBloomRenderer.hasRendered() && stage == VeilRenderLevelStageEvent.Stage.AFTER_LEVEL) {
             VeilDebug debug = VeilDebug.get();
             debug.pushDebugGroup("Veil Draw Bloom (" + stage + ")");
             VeilBloomRenderer.flush();
@@ -1277,6 +1277,12 @@ public final class VeilRenderSystem {
 
     @ApiStatus.Internal
     public static boolean drawLights(ProfilerFiller profiler, CullFrustum cullFrustum) {
+        LightRenderer lightRenderer = renderer.getLightRenderer();
+        if (!lightRenderer.hasLights()) {
+            AdvancedFbo.unbind();
+            return false;
+        }
+
         FramebufferManager framebufferManager = renderer.getFramebufferManager();
         AdvancedFbo lightFbo = framebufferManager.getFramebuffer(VeilFramebuffers.LIGHT);
         if (lightFbo == null) {
@@ -1298,7 +1304,6 @@ public final class VeilRenderSystem {
                 RenderProfilerCounter.CLIPPING_OUTPUT_PRIMITIVES
         );
 
-        LightRenderer lightRenderer = renderer.getLightRenderer();
         profiler.push("draw_lights");
         boolean rendered = lightRenderer.render(cullFrustum, lightFbo);
         profiler.pop();

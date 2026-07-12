@@ -19,6 +19,7 @@ public abstract class VeilMixinPlugin implements IMixinConfigPlugin {
     );
     private static final Map<String, Set<String>> INCOMPATIBLE_MIXINS = new Object2ObjectArrayMap<>();
     private final Map<String, Boolean> loadedMods = new HashMap<>();
+    private final Set<String> missingCompatTargets = new HashSet<>();
 
     static {
         addModIncompatibility("affinity", "foundry.veil.mixin.performance.client.PerformanceRenderTargetMixin", "foundry.veil.mixin.performance.client.PerformanceLevelRendererMixin");
@@ -32,6 +33,21 @@ public abstract class VeilMixinPlugin implements IMixinConfigPlugin {
 
     private boolean isModLoaded(String modId) {
         return this.loadedMods.computeIfAbsent(modId, Veil.platform()::isModLoaded);
+    }
+
+    private boolean hasTargetClass(String targetClassName) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            classLoader = VeilMixinPlugin.class.getClassLoader();
+        }
+        String resource = targetClassName.replace('.', '/') + ".class";
+        if (classLoader.getResource(resource) != null) {
+            return true;
+        }
+        if (this.missingCompatTargets.add(targetClassName)) {
+            Veil.LOGGER.warn("Skipping Veil compatibility mixin because target class {} is missing", targetClassName);
+        }
+        return false;
     }
 
     @Override
@@ -55,7 +71,7 @@ public abstract class VeilMixinPlugin implements IMixinConfigPlugin {
         }
         if (mixinClassName.startsWith("foundry.veil." + PACKAGE_NAME + ".mixin.compat")) {
             String[] parts = mixinClassName.split("\\.", 7);
-            return this.isModLoaded(parts[5]);
+            return this.isModLoaded(parts[5]) && this.hasTargetClass(targetClassName);
         }
         for (Map.Entry<String, Set<String>> entry : INCOMPATIBLE_MIXINS.entrySet()) {
             if (this.isModLoaded(entry.getKey()) && entry.getValue().contains(mixinClassName)) {

@@ -9,9 +9,13 @@ import foundry.veil.api.client.render.VeilRenderer;
 import foundry.veil.api.client.render.dynamicbuffer.DynamicBufferType;
 import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.light.data.LightData;
+import foundry.veil.api.client.render.rendertype.VeilRenderType;
+import foundry.veil.api.client.render.shader.program.ShaderProgram;
 import foundry.veil.api.client.render.vertex.VertexArray;
+import foundry.veil.impl.client.render.dynamicbuffer.DynamicBufferManager;
 import foundry.veil.impl.client.render.light.VoxelShadowGrid;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -35,9 +39,11 @@ import static org.lwjgl.opengl.GL11C.*;
  */
 public final class LightRenderer implements NativeResource {
 
-    private static final ResourceLocation BUFFER_ID = Veil.veilPath("lights");
+    private static final ResourceLocation DYNAMIC_BUFFER_SOURCE = Veil.veilPath("deferred_lights");
+
     private final Map<LightTypeRegistry.LightType<?>, LightTypeRenderer<?>> renderers;
     private final Map<LightTypeRegistry.LightType<?>, LightTypeRenderer<?>> renderersView;
+    private boolean dynamicBuffersEnabled;
 
     /**
      * Creates a new light renderer.
@@ -55,44 +61,46 @@ public final class LightRenderer implements NativeResource {
      */
     @ApiStatus.Internal
     public boolean render(CullFrustum frustum, AdvancedFbo lightFbo) {
-        boolean hasRendered = false;
-        boolean setupDDA = false;
-        VeilRenderer renderer = VeilRenderSystem.renderer();
-
         for (LightTypeRenderer<?> lightRenderer : this.renderers.values()) {
             lightRenderer.prepareLights(this, frustum);
+        }
 
-            // If there are no visible lights, then don't render anything
+        boolean hasRendered = false;
+        boolean hasDdaLights = false;
+        boolean hasOccludedDdaLights = false;
+        for (LightTypeRenderer<?> lightRenderer : this.renderers.values()) {
             if (lightRenderer.getVisibleLights() <= 0) {
                 continue;
             }
 
-            if (!hasRendered) {
-                if (renderer.enableBuffers(BUFFER_ID, DynamicBufferType.ALBEDO, DynamicBufferType.NORMAL)) {
-                    return false;
-                }
-
-                lightFbo.bind(true);
-                lightFbo.clear(GL_COLOR_BUFFER_BIT);
-                AdvancedFbo.getMainFramebuffer().resolveToAdvancedFbo(lightFbo, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-            }
-
             hasRendered = true;
-
-            // Decide if the DDA needs to be updated
-            if (lightRenderer instanceof DDALightRenderer<?> ddalightRenderer) {
-                if (!setupDDA) {
-                    VoxelShadowGrid.setup();
-                    setupDDA = true;
-                }
-                ddalightRenderer.uploadVoxelGridUniforms(VoxelShadowGrid.getTextureId(), VoxelShadowGrid.getUniformGridPos());
+            if (lightRenderer instanceof DDALightRenderer<?> ddaLightRenderer) {
+                hasDdaLights = true;
+                hasOccludedDdaLights |= ddaLightRenderer.hasOccludedLights();
             }
-            lightRenderer.renderLights(this);
         }
 
         if (!hasRendered) {
-            renderer.disableBuffers(BUFFER_ID, DynamicBufferType.ALBEDO, DynamicBufferType.NORMAL);
             return false;
+        }
+
+        lightFbo.bind(true);
+        lightFbo.clear(GL_COLOR_BUFFER_BIT);
+        AdvancedFbo.getMainFramebuffer().resolveToAdvancedFbo(lightFbo, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+        if (hasDdaLights) {
+            VoxelShadowGrid.setup(hasOccludedDdaLights);
+        }
+
+        for (LightTypeRenderer<?> lightRenderer : this.renderers.values()) {
+            if (lightRenderer.getVisibleLights() <= 0) {
+                continue;
+            }
+
+            if (lightRenderer instanceof DDALightRenderer<?> ddaLightRenderer) {
+                ddaLightRenderer.uploadVoxelGridUniforms(VoxelShadowGrid.getTextureId(), VoxelShadowGrid.getUniformGridPos());
+            }
+            lightRenderer.renderLights(this);
         }
 
         VertexArray.unbind();
@@ -108,6 +116,7 @@ public final class LightRenderer implements NativeResource {
     public <T extends LightData> LightRenderHandle<T> addLight(T lightData) {
         Objects.requireNonNull(lightData, "light");
         RenderSystem.assertOnRenderThreadOrInit();
+        this.enableDeferredBuffers();
         return ((LightTypeRenderer<T>) this.renderers.computeIfAbsent(lightData.getType(), lightType -> lightType.rendererFactory().createRenderer())).addLight(lightData);
     }
 
@@ -121,6 +130,7 @@ public final class LightRenderer implements NativeResource {
     public <T extends LightData> LightRenderHandle<T> addLight(LightRenderHandle<T> handle) {
         Objects.requireNonNull(handle, "light");
         RenderSystem.assertOnRenderThreadOrInit();
+        this.enableDeferredBuffers();
         return ((LightTypeRenderer<T>) this.renderers.computeIfAbsent(handle.getLightData().getType(), lightType -> lightType.rendererFactory().createRenderer())).steal(handle);
     }
 
@@ -145,8 +155,98 @@ public final class LightRenderer implements NativeResource {
         return this.renderersView;
     }
 
+    /**
+     * @return Whether any light renderer currently owns lights
+     */
+    public boolean hasLights() {
+        boolean hasLights = false;
+        for (LightTypeRenderer<?> renderer : this.renderers.values()) {
+            if (!renderer.getLights().isEmpty()) {
+                hasLights = true;
+                break;
+            }
+        }
+
+        if (hasLights) {
+            this.enableDeferredBuffers();
+        } else {
+            this.disableDeferredBuffers();
+        }
+        return hasLights;
+    }
+
+    /**
+     * Rebinds light shader scene inputs every draw so resource reloads and framebuffer resizes cannot leave
+     * stale scene, depth, or G-buffer texture ids attached to light programs.
+     */
+    @ApiStatus.Internal
+    public static void bindSceneSamplers(RenderType renderType) {
+        ResourceLocation shaderId = VeilRenderType.getShards(renderType).veilShaderId();
+        if (shaderId == null) {
+            return;
+        }
+
+        ShaderProgram shader = VeilRenderSystem.renderer().getShaderManager().getShader(shaderId);
+        if (shader == null || !shader.isValid()) {
+            return;
+        }
+
+        bindSceneSamplers(shader);
+    }
+
+    /**
+     * Rebinds light shader scene inputs every draw so resource reloads and framebuffer resizes cannot leave
+     * stale scene, depth, or G-buffer texture ids attached to light programs.
+     */
+    @ApiStatus.Internal
+    public static void bindSceneSamplers(ShaderProgram shader) {
+        VeilRenderer renderer = VeilRenderSystem.renderer();
+        if (renderer == null) {
+            return;
+        }
+
+        AdvancedFbo mainFramebuffer = AdvancedFbo.getMainFramebuffer();
+        if (mainFramebuffer.isColorTextureAttachment(0)) {
+            shader.setTexture("SceneSampler", GL_TEXTURE_2D, mainFramebuffer.getColorTextureAttachment(0).getId());
+        }
+        if (mainFramebuffer.isDepthTextureAttachment()) {
+            shader.setTexture("DepthSampler", GL_TEXTURE_2D, mainFramebuffer.getDepthTextureAttachment().getId());
+        }
+
+        DynamicBufferManager dynamicBufferManager = renderer.getDynamicBufferManger();
+        int activeBuffers = dynamicBufferManager.getActiveBuffers();
+        boolean hasNormal = (activeBuffers & DynamicBufferType.NORMAL.getMask()) != 0;
+
+        shader.setTexture("AlbedoSampler", GL_TEXTURE_2D, dynamicBufferManager.getBufferTexture(DynamicBufferType.ALBEDO));
+        shader.setTexture("NormalSampler", GL_TEXTURE_2D, dynamicBufferManager.getBufferTexture(DynamicBufferType.NORMAL));
+        shader.getUniformSafe("HasAlbedoSampler").setInt(0);
+        shader.getUniformSafe("HasNormalSampler").setInt(hasNormal ? 1 : 0);
+    }
+
+    private void enableDeferredBuffers() {
+        if (this.dynamicBuffersEnabled) {
+            return;
+        }
+        VeilRenderer renderer = VeilRenderSystem.renderer();
+        if (renderer == null) {
+            return;
+        }
+        renderer.enableBuffers(DYNAMIC_BUFFER_SOURCE, DynamicBufferType.NORMAL);
+        this.dynamicBuffersEnabled = true;
+    }
+
+    private void disableDeferredBuffers() {
+        VeilRenderer renderer = VeilRenderSystem.renderer();
+        if (!this.dynamicBuffersEnabled || renderer == null) {
+            return;
+        }
+        this.dynamicBuffersEnabled = false;
+        renderer.disableBuffers(DYNAMIC_BUFFER_SOURCE);
+    }
+
     @Override
     public void free() {
+        this.disableDeferredBuffers();
         this.renderers.values().forEach(LightTypeRenderer::free);
         this.renderers.clear();
     }

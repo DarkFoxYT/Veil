@@ -5,11 +5,13 @@ import foundry.veil.api.client.render.light.data.AreaLightData;
 import foundry.veil.api.client.render.light.data.DirectionalLightData;
 import foundry.veil.api.client.render.light.data.LightData;
 import foundry.veil.api.client.render.light.data.PointLightData;
+import foundry.veil.api.client.render.light.data.SpotLightData;
 import foundry.veil.api.client.render.light.renderer.LightTypeRenderer;
 import foundry.veil.impl.client.editor.LightInspector;
 import foundry.veil.impl.client.render.light.AreaLightRenderer;
+import foundry.veil.impl.client.render.light.DeferredPointLightRenderer;
+import foundry.veil.impl.client.render.light.DeferredSpotLightRenderer;
 import foundry.veil.impl.client.render.light.DirectionalLightRenderer;
-import foundry.veil.impl.client.render.light.InstancedPointLightRenderer;
 import foundry.veil.platform.registry.RegistrationProvider;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -30,17 +32,8 @@ public final class LightTypeRegistry {
     public static final Registry<LightType<?>> REGISTRY = PROVIDER.asVanillaRegistry();
 
     public static final Supplier<LightType<DirectionalLightData>> DIRECTIONAL = register("directional", DirectionalLightRenderer::new, (level, camera) -> new DirectionalLightData().setTo(camera).setDirection(0, -1, 0));
-    public static final Supplier<LightType<PointLightData>> POINT = register("point", () -> {
-//        boolean supported = VeilRenderSystem.multiDrawIndirectSupported();
-//        if (supported) {
-//            Veil.LOGGER.info("Using Indirect Point Light Renderer");
-//            return new IndirectPointLightRenderer();
-//        } else {
-//            Veil.LOGGER.info("Using Instanced Point Light Renderer");
-//            return new InstancedPointLightRenderer();
-//        }
-        return new InstancedPointLightRenderer();
-    }, (level, camera) -> new PointLightData().setTo(camera).setRadius(15.0F));
+    public static final Supplier<LightType<PointLightData>> POINT = register("point", DeferredPointLightRenderer::new, (level, camera) -> new PointLightData().setTo(camera).setRadius(15.0F));
+    public static final Supplier<LightType<SpotLightData>> SPOT = register("spot", DeferredSpotLightRenderer::new, (level, camera) -> new SpotLightData().setTo(camera).setRange(15.0F));
     public static final Supplier<LightType<AreaLightData>> AREA = register("area", AreaLightRenderer::new, (level, camera) -> new AreaLightData().setDistance(15.0F).setTo(camera));
 
     private LightTypeRegistry() {

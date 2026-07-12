@@ -24,6 +24,7 @@ public final class VeilBloomRenderer {
     private static boolean enabled;
     private static boolean rendered;
     private static AdvancedFbo bloom;
+    private static int bloomDepthTexture = -1;
 
     public static void tryEnable() {
         boolean wasEnabled = enabled;
@@ -52,7 +53,7 @@ public final class VeilBloomRenderer {
         int w = mainRenderTarget.getWidth();
         int h = mainRenderTarget.getHeight();
         int framebufferTexture = mainRenderTarget.getDepthTextureAttachment().getId();
-        if (bloom == null || bloom.getWidth() != w || bloom.getHeight() != h) {
+        if (bloom == null || bloom.getWidth() != w || bloom.getHeight() != h || bloomDepthTexture != framebufferTexture) {
             free();
             bloom = AdvancedFbo.withSize(w, h)
                     .setFormat(FramebufferAttachmentDefinition.Format.RGBA16F)
@@ -60,6 +61,7 @@ public final class VeilBloomRenderer {
                     .setDepthTextureWrapper(framebufferTexture)
                     .setDebugLabel("Veil Bloom")
                     .build(true);
+            bloomDepthTexture = framebufferTexture;
         }
 
         FramebufferStack.push(null);
@@ -89,11 +91,13 @@ public final class VeilBloomRenderer {
     }
 
     public static boolean hasRendered() {
-        return rendered && enabled;
+        return rendered && enabled && bloom != null;
     }
 
     public static void flush() {
-        if (!rendered || !enabled) {
+        AdvancedFbo bloom = VeilBloomRenderer.bloom;
+        if (!rendered || !enabled || bloom == null) {
+            rendered = false;
             return;
         }
 
@@ -106,20 +110,26 @@ public final class VeilBloomRenderer {
 
         ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
         profiler.push("bloom");
-
-        FramebufferStack.push(null);
-        VeilRenderSystem.renderer().getPostProcessingManager().runPipeline(pipeline);
-        bloom.clear(GL_COLOR_BUFFER_BIT);
-        FramebufferStack.pop(null);
-
-        profiler.pop();
+        try {
+            FramebufferStack.push(null);
+            try {
+                VeilRenderSystem.renderer().getPostProcessingManager().runPipeline(pipeline);
+                bloom.clear(GL_COLOR_BUFFER_BIT);
+            } finally {
+                FramebufferStack.pop(null);
+            }
+        } finally {
+            profiler.pop();
+        }
     }
 
     public static void free() {
+        rendered = false;
         if (bloom != null) {
             VeilRenderSystem.renderer().getFramebufferManager().removeFramebuffer(VeilFramebuffers.BLOOM);
             bloom.free();
             bloom = null;
         }
+        bloomDepthTexture = -1;
     }
 }

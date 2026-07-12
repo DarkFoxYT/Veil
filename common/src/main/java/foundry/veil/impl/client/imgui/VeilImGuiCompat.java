@@ -19,12 +19,12 @@ public final class VeilImGuiCompat {
     }
 
     public static void load() {
-        ImGuiMCEvents.INSTANCE.preRenderImGuiEvents(() -> {
+        ImGuiMCEvents.INSTANCE.preRenderImGuiEvent(() -> {
             VeilImGuiStylesheet.initStyles();
             AdvancedFboImGuiAreaImpl.begin();
             VeilRenderSystem.renderer().getEditorManager().render();
         });
-        ImGuiMCEvents.INSTANCE.postRenderImGuiEvents(() -> {
+        ImGuiMCEvents.INSTANCE.postRenderImGuiEvent(() -> {
             VeilImGuiStylesheet.initStyles();
             VeilRenderSystem.renderer().getEditorManager().renderLast();
             AdvancedFboImGuiAreaImpl.end();

@@ -5,7 +5,6 @@ import foundry.veil.api.client.editor.EditorAttributeProvider;
 import foundry.veil.api.client.registry.LightTypeRegistry;
 import foundry.veil.api.client.render.CullFrustum;
 import foundry.veil.api.client.render.light.DDALightData;
-import foundry.veil.api.client.render.light.IndirectLightData;
 import imgui.ImGui;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -14,45 +13,81 @@ import net.minecraft.core.Position;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
+import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
-import java.nio.ByteBuffer;
-
 /**
- * Represents a light where all rays come from a position in space.
+ * Represents a cone light emitted from a point in space.
  *
- * @since 2.0.0
+ * @since 4.0.0
  */
-public class PointLightData extends LightData implements IndirectLightData, DDALightData, EditorAttributeProvider {
+public class SpotLightData extends LightData implements DDALightData, EditorAttributeProvider {
 
     protected final Vector3d position;
-    protected float radius;
+    protected final Vector3f direction;
+    protected float range;
     protected float falloff;
     protected LightFalloff falloffType;
+    protected float innerConeAngle;
+    protected float outerConeAngle;
     protected float specularStrength;
     protected float godRayStrength;
     protected float shadowIntensity;
     protected boolean occlusionEnabled;
 
-    public PointLightData() {
+    public SpotLightData() {
         this.position = new Vector3d();
-        this.radius = 1.0F;
+        this.direction = new Vector3f(0.0F, -1.0F, 0.0F);
+        this.range = 8.0F;
         this.falloff = 2.0F;
         this.falloffType = LightFalloff.SMOOTH;
-        this.specularStrength = 0.18F;
+        this.innerConeAngle = (float) Math.toRadians(22.0);
+        this.outerConeAngle = (float) Math.toRadians(35.0);
+        this.specularStrength = 0.22F;
         this.godRayStrength = 1.0F;
         this.shadowIntensity = 1.0F;
         this.occlusionEnabled = true;
     }
 
-    @Override
-    public float getRadius() {
-        return this.radius;
-    }
-
-    @Override
+    /**
+     * @return The XYZ position of this light in the world.
+     */
     public Vector3dc getPosition() {
         return this.position;
+    }
+
+    /**
+     * Copies this light's position into the specified vector.
+     *
+     * @param store The vector to store the position in
+     * @return The passed in vector
+     */
+    public Vector3d getPosition(Vector3d store) {
+        return store.set(this.position);
+    }
+
+    /**
+     * @return The normalized direction this spotlight emits toward.
+     */
+    public Vector3fc getDirection() {
+        return this.direction;
+    }
+
+    /**
+     * Copies this light's direction into the specified vector.
+     *
+     * @param store The vector to store the direction in
+     * @return The passed in vector
+     */
+    public Vector3f getDirection(Vector3f store) {
+        return store.set(this.direction);
+    }
+
+    /**
+     * @return The maximum distance this light can travel.
+     */
+    public float getRange() {
+        return this.range;
     }
 
     /**
@@ -67,6 +102,20 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
      */
     public LightFalloff getFalloffType() {
         return this.falloffType;
+    }
+
+    /**
+     * @return The full-strength cone angle in radians.
+     */
+    public float getInnerConeAngle() {
+        return this.innerConeAngle;
+    }
+
+    /**
+     * @return The outer cone angle in radians where the light reaches zero.
+     */
+    public float getOuterConeAngle() {
+        return this.outerConeAngle;
     }
 
     /**
@@ -91,34 +140,24 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
         return this.shadowIntensity;
     }
 
-    /**
-     * Copies this light's position into the specified vector.
-     *
-     * @param store The vector to store the position in
-     * @return The passed in vector
-     */
-    public Vector3d getPosition(Vector3d store) {
-        return store.set(this.position);
-    }
-
     @Override
     public boolean isOcclusionEnabled() {
         return this.occlusionEnabled;
     }
 
-    public PointLightData setPosition(Vector3dc pos) {
+    public SpotLightData setPosition(Vector3dc pos) {
         return this.setPosition(pos.x(), pos.y(), pos.z());
     }
 
-    public PointLightData setPosition(Vector3fc pos) {
+    public SpotLightData setPosition(Vector3fc pos) {
         return this.setPosition(pos.x(), pos.y(), pos.z());
     }
 
-    public PointLightData setPosition(Position pos) {
+    public SpotLightData setPosition(Position pos) {
         return this.setPosition(pos.x(), pos.y(), pos.z());
     }
 
-    public PointLightData setPosition(double x, double y, double z) {
+    public SpotLightData setPosition(double x, double y, double z) {
         if (Double.compare(this.position.x, x) == 0 &&
                 Double.compare(this.position.y, y) == 0 &&
                 Double.compare(this.position.z, z) == 0) {
@@ -129,17 +168,47 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
         return this;
     }
 
-    public PointLightData setRadius(float radius) {
-        radius = Math.max(0.0F, radius);
-        if (Float.compare(this.radius, radius) == 0) {
+    public SpotLightData setDirection(Vector3fc direction) {
+        return this.setDirection(direction.x(), direction.y(), direction.z());
+    }
+
+    public SpotLightData setDirection(float x, float y, float z) {
+        if (Float.compare(this.direction.x, x) == 0 &&
+                Float.compare(this.direction.y, y) == 0 &&
+                Float.compare(this.direction.z, z) == 0) {
             return this;
         }
-        this.radius = radius;
+
+        if (x * x + y * y + z * z < 1.0E-6F) {
+            return this;
+        }
+
+        this.direction.set(x, y, z).normalize();
         this.markDirty();
         return this;
     }
 
-    public PointLightData setFalloff(float falloff) {
+    public SpotLightData setRotation(float yaw, float pitch) {
+        float yawRad = (float) Math.toRadians(yaw);
+        float pitchRad = (float) Math.toRadians(pitch);
+        float pitchCos = (float) Math.cos(pitchRad);
+        return this.setDirection(
+                (float) -Math.sin(yawRad) * pitchCos,
+                (float) -Math.sin(pitchRad),
+                (float) Math.cos(yawRad) * pitchCos);
+    }
+
+    public SpotLightData setRange(float range) {
+        range = Math.max(0.0F, range);
+        if (Float.compare(this.range, range) == 0) {
+            return this;
+        }
+        this.range = range;
+        this.markDirty();
+        return this;
+    }
+
+    public SpotLightData setFalloff(float falloff) {
         falloff = Math.max(0.001F, falloff);
         if (Float.compare(this.falloff, falloff) == 0) {
             return this;
@@ -149,7 +218,7 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
         return this;
     }
 
-    public PointLightData setFalloffType(LightFalloff falloffType) {
+    public SpotLightData setFalloffType(LightFalloff falloffType) {
         if (this.falloffType == falloffType) {
             return this;
         }
@@ -158,7 +227,28 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
         return this;
     }
 
-    public PointLightData setSpecularStrength(float specularStrength) {
+    public SpotLightData setInnerConeAngle(float innerConeAngle) {
+        return this.setConeAngles(innerConeAngle, Math.max(innerConeAngle, this.outerConeAngle));
+    }
+
+    public SpotLightData setOuterConeAngle(float outerConeAngle) {
+        return this.setConeAngles(Math.min(this.innerConeAngle, outerConeAngle), outerConeAngle);
+    }
+
+    public SpotLightData setConeAngles(float innerConeAngle, float outerConeAngle) {
+        innerConeAngle = Math.max(0.0F, Math.min((float) Math.PI, innerConeAngle));
+        outerConeAngle = Math.max(innerConeAngle + 0.001F, Math.min((float) Math.PI, outerConeAngle));
+        if (Float.compare(this.innerConeAngle, innerConeAngle) == 0 &&
+                Float.compare(this.outerConeAngle, outerConeAngle) == 0) {
+            return this;
+        }
+        this.innerConeAngle = innerConeAngle;
+        this.outerConeAngle = outerConeAngle;
+        this.markDirty();
+        return this;
+    }
+
+    public SpotLightData setSpecularStrength(float specularStrength) {
         specularStrength = Math.max(0.0F, specularStrength);
         if (Float.compare(this.specularStrength, specularStrength) == 0) {
             return this;
@@ -168,7 +258,7 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
         return this;
     }
 
-    public PointLightData setGodRayStrength(float godRayStrength) {
+    public SpotLightData setGodRayStrength(float godRayStrength) {
         godRayStrength = Math.max(0.0F, godRayStrength);
         if (Float.compare(this.godRayStrength, godRayStrength) == 0) {
             return this;
@@ -178,7 +268,7 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
         return this;
     }
 
-    public PointLightData setShadowIntensity(float shadowIntensity) {
+    public SpotLightData setShadowIntensity(float shadowIntensity) {
         shadowIntensity = Math.max(0.0F, shadowIntensity);
         if (Float.compare(this.shadowIntensity, shadowIntensity) == 0) {
             return this;
@@ -188,7 +278,7 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
         return this;
     }
 
-    public PointLightData setOcclusionEnabled(boolean occlusionEnabled) {
+    public SpotLightData setOcclusionEnabled(boolean occlusionEnabled) {
         if (this.occlusionEnabled == occlusionEnabled) {
             return this;
         }
@@ -198,79 +288,70 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
     }
 
     /**
-     * Applies cheap defaults for small decorative lights where color and bloom matter more than voxel shadows.
+     * Applies cheap defaults for decorative cone lights where a visible glow matters more than voxel shadows.
      *
      * @return This light for chaining
      */
-    public PointLightData setDecorativeDefaults() {
+    public SpotLightData setDecorativeDefaults() {
         this.setOcclusionEnabled(false);
         this.setShadowIntensity(0.0F);
         this.setGodRayStrength(0.0F);
-        this.setSpecularStrength(Math.min(this.specularStrength, 0.05F));
+        this.setSpecularStrength(Math.min(this.specularStrength, 0.06F));
         return this;
     }
 
     @Override
-    public PointLightData setColor(Vector3fc color) {
+    public SpotLightData setColor(Vector3fc color) {
         super.setColor(color);
         return this;
     }
 
     @Override
-    public PointLightData setColor(Colorc color) {
+    public SpotLightData setColor(Colorc color) {
         this.setColor(color.red(), color.green(), color.blue());
         return this;
     }
 
     @Override
-    public PointLightData setColor(float red, float green, float blue) {
+    public SpotLightData setColor(float red, float green, float blue) {
         super.setColor(red, green, blue);
         return this;
     }
 
     @Override
-    public PointLightData setColor(int color) {
+    public SpotLightData setColor(int color) {
         super.setColor(color);
         return this;
     }
 
     @Override
-    public PointLightData setBrightness(float brightness) {
+    public SpotLightData setBrightness(float brightness) {
         super.setBrightness(brightness);
         return this;
     }
 
     @Override
-    public PointLightData setTemperature(float temperature) {
+    public SpotLightData setTemperature(float temperature) {
         super.setTemperature(temperature);
         return this;
     }
 
     @Override
     public boolean isVisible(CullFrustum frustum) {
-        return frustum.testSphere(this.position, this.radius * 1.4F);
+        return frustum.testSphere(this.position, this.range);
     }
 
     @Override
-    public void store(ByteBuffer buffer) {
-        this.position.getf(buffer.position(), buffer);
-        buffer.position(buffer.position() + Float.BYTES * 3);
-        buffer.putFloat(this.color.red() * this.brightness);
-        buffer.putFloat(this.color.green() * this.brightness);
-        buffer.putFloat(this.color.blue() * this.brightness);
-        buffer.putFloat(this.radius);
-        buffer.putFloat(this.occlusionEnabled ? 1.0F : 0.0F);
-    }
-
-    @Override
-    public PointLightData setTo(Camera camera) {
+    public SpotLightData setTo(Camera camera) {
         Vec3 pos = camera.getPosition();
-        return this.setPosition(pos.x, pos.y, pos.z);
+        this.setPosition(pos.x, pos.y, pos.z);
+        this.setDirection(camera.getLookVector());
+        return this;
     }
 
     @Override
     public LightTypeRegistry.LightType<?> getType() {
-        return LightTypeRegistry.POINT.get();
+        return LightTypeRegistry.SPOT.get();
     }
 
     @Override
@@ -292,7 +373,9 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
         this.renderColorControls();
         this.renderFloatControl("Temperature (K)", this.getTemperature(), 25.0F, 1000.0F, this::setTemperature);
         this.renderFloatControl("Intensity", this.getBrightness(), 0.02F, 0.0F, this::setBrightness);
-        this.renderFloatControl("Range", this.radius, 0.02F, 0.0F, this::setRadius);
+        this.renderFloatControl("Range (distance)", this.range, 0.02F, 0.0F, this::setRange);
+        this.renderRotationControls();
+        this.renderConeControls();
         this.renderFloatControl("Specular strength", this.specularStrength, 0.02F, 0.0F, this::setSpecularStrength);
         this.renderFloatControl("God-ray strength", this.godRayStrength, 0.02F, 0.0F, this::setGodRayStrength);
         this.renderFloatControl("Shadow intensity", this.shadowIntensity, 0.02F, 0.0F, this::setShadowIntensity);
@@ -334,6 +417,42 @@ public class PointLightData extends LightData implements IndirectLightData, DDAL
         }
         ImGui.popItemWidth();
         label("Color");
+    }
+
+    private void renderRotationControls() {
+        float yaw = (float) Math.toDegrees(Math.atan2(-this.direction.x, this.direction.z));
+        float pitch = (float) Math.toDegrees(Math.asin(-this.direction.y));
+        float[] editYaw = new float[]{yaw};
+        float[] editPitch = new float[]{pitch};
+
+        float totalWidth = ImGui.calcItemWidth();
+        float spacing = ImGui.getStyle().getItemInnerSpacingX();
+        ImGui.pushItemWidth(totalWidth / 2.0F - spacing * 0.5F);
+        boolean changed = ImGui.dragScalar("##yaw", editYaw, 0.05F);
+        ImGui.sameLine(0, spacing);
+        changed |= ImGui.dragScalar("##pitch", editPitch, 0.05F, -89.9F, 89.9F);
+        ImGui.popItemWidth();
+        if (changed) {
+            this.setRotation(editYaw[0], editPitch[0]);
+        }
+        label("Rotation (yaw/pitch)");
+    }
+
+    private void renderConeControls() {
+        float[] editInner = new float[]{(float) Math.toDegrees(this.innerConeAngle)};
+        float[] editOuter = new float[]{(float) Math.toDegrees(this.outerConeAngle)};
+
+        float totalWidth = ImGui.calcItemWidth();
+        float spacing = ImGui.getStyle().getItemInnerSpacingX();
+        ImGui.pushItemWidth(totalWidth / 2.0F - spacing * 0.5F);
+        boolean changed = ImGui.dragScalar("##innerCone", editInner, 0.05F, 0.0F, 179.0F);
+        ImGui.sameLine(0, spacing);
+        changed |= ImGui.dragScalar("##outerCone", editOuter, 0.05F, 0.0F, 179.0F);
+        ImGui.popItemWidth();
+        if (changed) {
+            this.setConeAngles((float) Math.toRadians(editInner[0]), (float) Math.toRadians(editOuter[0]));
+        }
+        label("Cone inner/outer (deg)");
     }
 
     private void renderFloatControl(String label, float value, float speed, float min, FloatSetter setter) {

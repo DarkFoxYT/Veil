@@ -3,7 +3,7 @@ uniform vec2 OutSize;
 
 in vec2 texCoord;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 const float offset = 3;
 

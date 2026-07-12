@@ -1,30 +1,23 @@
-#include veil:common
-#include veil:space_helper
-#include veil:color_utilities
+#define VEIL_DEFERRED_NO_VOXEL_SHADOWS
+#include veil:deferred_light
 
 in vec2 texCoord;
 
-uniform sampler2D AlbedoSampler;
-uniform sampler2D NormalSampler;
-
 uniform vec3 LightColor;
 uniform vec3 LightDirection;
+uniform float SpecularStrength;
 
 out vec4 fragColor;
 
 void main() {
-    vec4 albedoColor = texture(AlbedoSampler, texCoord);
-    if (albedoColor.a == 0) {
+    DeferredSurface surface;
+    if (!deferredLoadSurface(texCoord, surface)) {
         discard;
     }
 
-    vec3 normalVS = texture(NormalSampler, texCoord).xyz;
-    vec3 lightDirectionVS = (VeilCamera.ViewMat * vec4(LightDirection, 0.0)).xyz;
-
-    // lighting calculation
-    float diffuse = clamp(smoothstep(-0.2, 0.2, -dot(normalVS, lightDirectionVS)), 0.0, 1.0);
-
-    float reflectivity = 0.05;
-    vec3 diffuseColor = diffuse * LightColor;
-    fragColor = vec4(albedoColor.rgb * diffuseColor * (1.0 - reflectivity) + diffuseColor * reflectivity, 1.0);
+    vec3 light = deferredEvaluateDirectionalLight(surface, normalize(LightDirection), LightColor, max(SpecularStrength, 0.08));
+    if (max(max(light.r, light.g), light.b) <= 0.00001) {
+        discard;
+    }
+    fragColor = vec4(light, 1.0);
 }

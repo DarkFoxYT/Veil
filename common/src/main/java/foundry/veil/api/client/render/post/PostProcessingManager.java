@@ -69,7 +69,7 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
     public PostProcessingManager() {
         super(CompositePostPipeline.CODEC, FileToIdConverter.json("pinwheel/post"));
         this.context = new PostPipelineContext();
-        this.activePipelines = new LinkedList<>();
+        this.activePipelines = new ArrayList<>();
         this.activePipelinesView = Collections.unmodifiableList(this.activePipelines);
         this.pipelines = new HashMap<>();
         this.pipelinesDirty = false;
@@ -104,6 +104,17 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
 
     /**
      * Adds the specified pipeline with the specified priority.
+     *
+     * @param pipeline The pipeline to add
+     * @param priority The priority to set the pipeline to. The default priority is <code>1000</code>
+     * @return Whether the pipeline was added or had a priority change
+     */
+    public boolean add(ResourceLocation pipeline, int priority) {
+        return this.add(priority, pipeline);
+    }
+
+    /**
+     * Adds the specified pipeline with the specified priority.
      * A higher priority indicates the pipeline should be run earlier than lower priority pipelines.
      *
      * @param priority The priority to set the pipeline to. The default priority is <code>1000</code>
@@ -127,6 +138,17 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
         this.activePipelines.add(new ProfileEntry(pipeline, priority));
         this.pipelinesDirty = true;
         return true;
+    }
+
+    /**
+     * Adds or removes the specified pipeline.
+     *
+     * @param pipeline The pipeline to toggle
+     * @param active   Whether the pipeline should be active
+     * @return Whether the active pipeline list changed
+     */
+    public boolean setActive(ResourceLocation pipeline, boolean active) {
+        return active ? this.add(pipeline) : this.remove(pipeline);
     }
 
     /**
@@ -160,7 +182,9 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
     @ApiStatus.Internal
     public void endFrame() {
         // Disable any buffers that didn't draw this frame
-        VeilRenderSystem.renderer().getDynamicBufferManger().setActiveBuffers(POST, this.enabledBuffers);
+        int enabledBuffers = this.enabledBuffers;
+        this.enabledBuffers = 0;
+        VeilRenderSystem.renderer().getDynamicBufferManger().setActiveBuffers(POST, enabledBuffers);
     }
 
     private void setup() {
@@ -196,63 +220,75 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
             return;
         }
 
-        VeilDebug debug = VeilDebug.get();
-        if (stage != null) {
-            debug.pushDebugGroup("Veil Post Processing (" + stage.getName() + ")");
-        } else {
-            debug.pushDebugGroup("Veil Post Processing");
-        }
-
-        VeilRenderer renderer = VeilRenderSystem.renderer();
-        AdvancedFbo postFramebuffer = renderer.getFramebufferManager().getFramebuffer(VeilFramebuffers.POST);
-        VeilClientPlatform platform = VeilClient.clientPlatform();
-        this.context.begin();
-        this.setup();
-        int activeTexture = GlStateManager._getActiveTexture();
-
         if (this.pipelinesDirty) {
             this.pipelinesDirty = false;
             this.activePipelines.sort(PIPELINE_SORTER);
         }
-        for (ProfileEntry entry : this.activePipelines) {
-            ResourceLocation id = entry.getPipeline();
-            CompositePostPipeline pipeline = this.pipelines.get(id);
-            if (pipeline != null) {
-                this.enabledBuffers |= pipeline.getDynamicBuffersMask();
-                // The buffer hasn't been enabled yet, so wait until next frame
-                if ((renderer.getDynamicBufferManger().getActiveBuffers() & this.enabledBuffers) != this.enabledBuffers) {
-                    continue;
-                }
 
-                // Only draw in the appropriate stage
-                if (pipeline.getRenderStage() != stage) {
-                    continue;
-                }
+        VeilRenderer renderer = VeilRenderSystem.renderer();
+        int activeBuffers = renderer.getDynamicBufferManger().getActiveBuffers();
+        VeilClientPlatform platform = VeilClient.clientPlatform();
 
-                platform.preVeilPostProcessing(id, pipeline, this.context);
-                try {
-                    pipeline.apply(this.context);
-                    this.clearPipeline();
-                    // Resolve back to main for the next pipeline
-                    if (postFramebuffer != null) {
-                        postFramebuffer.resolveToRenderTarget(
-                                Minecraft.getInstance().getMainRenderTarget(),
-                                GL_COLOR_BUFFER_BIT,
-                                GL_NEAREST
-                        );
+        VeilDebug debug = VeilDebug.get();
+        AdvancedFbo postFramebuffer = null;
+        boolean setup = false;
+        int activeTexture = 0;
+        try {
+            for (ProfileEntry entry : this.activePipelines) {
+                ResourceLocation id = entry.getPipeline();
+                CompositePostPipeline pipeline = this.pipelines.get(id);
+                if (pipeline != null) {
+                    // Only draw in the appropriate stage
+                    if (pipeline.getRenderStage() != stage) {
+                        continue;
                     }
-                } catch (Exception e) {
-                    Veil.LOGGER.error("Error running pipeline {}", id, e);
+
+                    int dynamicBuffers = pipeline.getDynamicBuffersMask();
+                    this.enabledBuffers |= dynamicBuffers;
+                    // The buffer hasn't been enabled yet, so wait until next frame
+                    if ((activeBuffers & dynamicBuffers) != dynamicBuffers) {
+                        continue;
+                    }
+
+                    if (!setup) {
+                        if (stage != null) {
+                            debug.pushDebugGroup("Veil Post Processing (" + stage.getName() + ")");
+                        } else {
+                            debug.pushDebugGroup("Veil Post Processing");
+                        }
+                        postFramebuffer = renderer.getFramebufferManager().getFramebuffer(VeilFramebuffers.POST);
+                        this.context.begin();
+                        this.setup();
+                        activeTexture = GlStateManager._getActiveTexture();
+                        setup = true;
+                    }
+
+                    platform.preVeilPostProcessing(id, pipeline, this.context);
+                    try {
+                        pipeline.apply(this.context);
+                        this.clearPipeline();
+                        // Resolve back to main for the next pipeline
+                        if (postFramebuffer != null) {
+                            postFramebuffer.resolveToRenderTarget(
+                                    Minecraft.getInstance().getMainRenderTarget(),
+                                    GL_COLOR_BUFFER_BIT,
+                                    GL_NEAREST
+                            );
+                        }
+                    } catch (Exception e) {
+                        Veil.LOGGER.error("Error running pipeline {}", id, e);
+                    }
+                    platform.postVeilPostProcessing(id, pipeline, this.context);
                 }
-                platform.postVeilPostProcessing(id, pipeline, this.context);
+            }
+        } finally {
+            if (setup) {
+                RenderSystem.activeTexture(activeTexture);
+                this.clear();
+                this.context.end();
+                debug.popDebugGroup();
             }
         }
-
-        RenderSystem.activeTexture(activeTexture);
-        this.clear();
-        this.context.end();
-
-        debug.popDebugGroup();
     }
 
     /**
@@ -274,9 +310,10 @@ public class PostProcessingManager extends CodecReloadListener<CompositePostPipe
     public void runPipeline(PostPipeline pipeline, boolean resolvePost) {
         VeilRenderer renderer = VeilRenderSystem.renderer();
         if (pipeline instanceof CompositePostPipeline compositePostPipeline) {
-            this.enabledBuffers |= compositePostPipeline.getDynamicBuffersMask();
+            int dynamicBuffers = compositePostPipeline.getDynamicBuffersMask();
+            this.enabledBuffers |= dynamicBuffers;
             // The buffer hasn't been enabled yet, so wait until next frame
-            if ((renderer.getDynamicBufferManger().getActiveBuffers() & this.enabledBuffers) != this.enabledBuffers) {
+            if ((renderer.getDynamicBufferManger().getActiveBuffers() & dynamicBuffers) != dynamicBuffers) {
                 return;
             }
         }

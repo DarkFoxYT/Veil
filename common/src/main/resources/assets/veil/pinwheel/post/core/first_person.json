@@ -18,6 +18,24 @@
       "in": "veil:first_person",
       "out": "minecraft:main",
       "clear": false
+    },
+    {
+      "type": "veil:mask",
+      "red": false,
+      "green": false,
+      "blue": false,
+      "alpha": true,
+      "depth": false
+    },
+    {
+      "type": "veil:depth_function",
+      "function": "ALWAYS"
+    },
+    {
+      "type": "veil:blit",
+      "shader": "veil:core/alpha_opaque",
+      "out": "minecraft:main",
+      "clear": false
     }
   ]
 }

@@ -17,6 +17,8 @@ import static org.lwjgl.opengl.GL12.GL_TEXTURE_3D;
  */
 public interface DDALightRenderer<T extends LightData & DDALightData> extends LightTypeRenderer<T> {
 
+    float VOXEL_GRID_CELL_SIZE = 0.25F;
+
     /**
      * Uploads new uniform data from the GPU voxel grid.
      *
@@ -31,8 +33,9 @@ public interface DDALightRenderer<T extends LightData & DDALightData> extends Li
             return false;
         }
 
-        for (LightRenderHandle<T> light : this.getLights()) {
-            if (light.getLightData().isOcclusionEnabled()) {
+        for (LightRenderHandle<T> light : this.getPreparedLights()) {
+            T lightData = light.getLightData();
+            if (lightData.isOcclusionEnabled() && lightData.getShadowIntensity() > 0.0001F) {
                 return true;
             }
         }
@@ -49,5 +52,6 @@ public interface DDALightRenderer<T extends LightData & DDALightData> extends Li
         }
         program.setTexture("BlockGrid", GL_TEXTURE_3D, voxelGridTexture);
         program.getUniformSafe("GridOrigin").setVector(gridOrigin);
+        program.getUniformSafe("GridCellSize").setFloat(VOXEL_GRID_CELL_SIZE);
     }
 }

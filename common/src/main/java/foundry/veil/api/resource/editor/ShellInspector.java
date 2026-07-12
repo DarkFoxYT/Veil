@@ -116,7 +116,7 @@ public class ShellInspector implements ResourceFileEditor<ShellResource> {
                 if (ImGui.isWindowHovered()) {
                     this.applyCameraChanges();
                 }
-                ImGui.image(texture, desiredWidth / 2.0F, desiredHeight / 2.0F, 0, 1, 1, 0, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.1F);
+                ImGui.imageWithBg(texture, desiredWidth / 2.0F, desiredHeight / 2.0F, 0, 1, 1, 0, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.1F);
             }
             ImGui.endChild();
         }

@@ -13,7 +13,6 @@ import foundry.veil.ext.RenderTargetExtension;
 import foundry.veil.impl.client.render.dynamicbuffer.DynamicBufferManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
@@ -51,21 +50,14 @@ public final class VeilFirstPersonRenderer {
         dynamicBufferManager.setEnabled(false);
 
         VeilRenderSystem.renderer().getFramebufferManager().setFramebuffer(VeilFramebuffers.FIRST_PERSON, fbo);
-        fbo.clear(mask);
+        fbo.clear(0.0F, 0.0F, 0.0F, 1.0F, mask);
         fbo.bind(false);
         // This redirects calls to the vanilla framebuffer to the first person buffer instead
         ((RenderTargetExtension) Minecraft.getInstance().getMainRenderTarget()).veil$setWrapper(fbo);
     }
 
     public static void unbind() {
-        // TODO update projection/modelview matrix
-        ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
-        boolean rendered = VeilRenderSystem.drawLights(profiler, VeilRenderSystem.getCullingFrustum());
         ((RenderTargetExtension) Minecraft.getInstance().getMainRenderTarget()).veil$setWrapper(null);
-
-        if (rendered) {
-            VeilRenderSystem.compositeLights(profiler);
-        }
 
         VeilRenderer renderer = VeilRenderSystem.renderer();
         PostProcessingManager postProcessingManager = renderer.getPostProcessingManager();
@@ -78,6 +70,12 @@ public final class VeilFirstPersonRenderer {
             }
         } else {
             postProcessingManager.runPipeline(pipeline, false);
+            if (VeilBloomRenderer.hasRendered()) {
+                VeilDebug debug = VeilDebug.get();
+                debug.pushDebugGroup("Veil Draw First Person Bloom");
+                VeilBloomRenderer.flush();
+                debug.popDebugGroup();
+            }
         }
 
         AdvancedFbo.unbind();

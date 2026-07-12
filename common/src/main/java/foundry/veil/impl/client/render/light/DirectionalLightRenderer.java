@@ -18,14 +18,15 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 @ApiStatus.Internal
 public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLightData> {
 
     private static final Vector3f DIRECTION = new Vector3f();
+    private static final Vector3f TEMPERATURE = new Vector3f();
     private static final ResourceLocation RENDER_TYPE = Veil.veilPath("light/directional");
 
     private final List<LightHandle> lights;
@@ -34,7 +35,7 @@ public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLi
     private boolean freed;
 
     public DirectionalLightRenderer() {
-        this.lights = new LinkedList<>();
+        this.lights = new ArrayList<>();
 
         this.vertexArray = VertexArray.create();
         this.vertexArray.upload(createMesh(), VertexArray.DrawUsage.STATIC);
@@ -80,11 +81,13 @@ public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLi
         }
 
         this.vertexArray.bind();
+        LightRenderer.bindSceneSamplers(renderType);
         this.vertexArray.setup(renderType);
         this.render();
         this.vertexArray.clear(renderType);
         if (renderType instanceof VeilRenderType.LayeredRenderType layeredRenderType) {
             for (RenderType layer : layeredRenderType.getLayers()) {
+                LightRenderer.bindSceneSamplers(layer);
                 this.vertexArray.setup(layer);
                 this.render();
                 this.vertexArray.clear(layer);
@@ -98,21 +101,28 @@ public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLi
             return;
         }
 
+        Uniform lightColorUniform = shader.getUniform("LightColor");
+        Uniform lightDirection = shader.getUniform("LightDirection");
+        Uniform specularStrength = shader.getUniform("SpecularStrength");
         for (LightHandle handle : this.lights) {
             DirectionalLightData light = handle.getLightData();
 
-            Uniform lightColorUniform = shader.getUniform("LightColor");
             if (lightColorUniform != null) {
                 Colorc lightColor = light.getColor();
                 float brightness = light.getBrightness();
-                lightColorUniform.set(lightColor.red() * brightness, lightColor.green() * brightness, lightColor.blue() * brightness);
+                light.getTemperatureColor(TEMPERATURE);
+                lightColorUniform.set(lightColor.red() * brightness * TEMPERATURE.x(), lightColor.green() * brightness * TEMPERATURE.y(), lightColor.blue() * brightness * TEMPERATURE.z());
                 lightColorUniform.upload();
             }
 
-            Uniform lightDirection = shader.getUniform("LightDirection");
             if (lightDirection != null) {
                 lightDirection.set(light.getDirection().normalize(DIRECTION));
                 lightDirection.upload();
+            }
+
+            if (specularStrength != null) {
+                specularStrength.set(0.08F);
+                specularStrength.upload();
             }
 
             this.vertexArray.draw();
@@ -150,6 +160,7 @@ public class DirectionalLightRenderer implements LightTypeRenderer<DirectionalLi
 
         @Override
         public void markDirty() {
+            this.data.markDirty();
         }
 
         @Override

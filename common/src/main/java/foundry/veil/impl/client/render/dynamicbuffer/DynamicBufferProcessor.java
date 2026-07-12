@@ -232,7 +232,7 @@ public class DynamicBufferProcessor implements ShaderPreProcessor {
                         boolean hasColorModulator = tree.field("ColorModulator").isPresent();
                         boolean inserted = false;
                         for (int j = 0; j < mainFunctionBody.size(); j++) {
-                            GlslNode body = mainFunctionBody.get(i);
+                            GlslNode body = mainFunctionBody.get(j);
                             Optional<GlslNode> textureOptional = body.stream().filter(node -> {
                                 if (!(node instanceof GlslInvokeFunctionNode invokeFunctionNode) || invokeFunctionNode.getParameters().size() != 2) {
                                     return false;

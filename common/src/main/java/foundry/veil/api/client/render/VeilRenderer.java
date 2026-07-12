@@ -297,13 +297,13 @@ public class VeilRenderer implements ResourceManagerReloadListener {
 
     @ApiStatus.Internal
     public void free() {
+        this.lightRenderer.free();
         this.dynamicBufferManager.free();
         this.shaderManager.close();
         this.framebufferManager.free();
         this.postProcessingManager.free();
         this.quasarParticleManager.clear();
         this.flareEffectManager.getShellManager().free();
-        this.lightRenderer.free();
     }
 
     @Override

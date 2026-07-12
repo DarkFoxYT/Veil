@@ -37,6 +37,7 @@ public abstract class InstancedLightRenderer<T extends LightData & InstancedLigh
     private final VertexArray vertexArray;
     private final int instancedVbo;
 
+    private boolean visibleLightsChanged;
     private boolean freed;
 
     /**
@@ -122,20 +123,6 @@ public abstract class InstancedLightRenderer<T extends LightData & InstancedLigh
         }
     }
 
-    private boolean visibleLightsChanged() {
-        if (this.visibleLights.size() != this.lastVisibleLights.size()) {
-            return true;
-        }
-
-        for (int i = 0; i < this.visibleLights.size(); i++) {
-            if (this.visibleLights.get(i) != this.lastVisibleLights.get(i)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     @Override
     public LightRenderHandle<T> addLight(T light) {
         LightHandle handle = new LightHandle(light);
@@ -160,6 +147,16 @@ public abstract class InstancedLightRenderer<T extends LightData & InstancedLigh
                 this.visibleLights.add(light);
             }
         }
+
+        this.visibleLightsChanged = this.visibleLights.size() != this.lastVisibleLights.size();
+        if (!this.visibleLightsChanged) {
+            for (int i = 0; i < this.visibleLights.size(); i++) {
+                if (this.visibleLights.get(i) != this.lastVisibleLights.get(i)) {
+                    this.visibleLightsChanged = true;
+                    break;
+                }
+            }
+        }
     }
 
     @Override
@@ -172,6 +169,7 @@ public abstract class InstancedLightRenderer<T extends LightData & InstancedLigh
         if (renderType == null) {
             return;
         }
+        LightRenderer.bindSceneSamplers(renderType);
 
         RenderSystem.glBindBuffer(GL_ARRAY_BUFFER, this.instancedVbo);
 
@@ -179,19 +177,16 @@ public abstract class InstancedLightRenderer<T extends LightData & InstancedLigh
 
         // If there is no space, then resize
         if (this.visibleLights.size() > this.maxLights) {
-            if (this.maxLights < 100) {
-                this.maxLights = 100;
-            } else {
-                this.maxLights = (int) Math.max(Math.ceil(this.maxLights / 2.0), this.visibleLights.size() * 1.5);
-            }
+            this.maxLights = Math.max(this.visibleLights.size(), Math.max(100, this.maxLights + Math.max(1, this.maxLights >> 1)));
             glBufferData(GL_ARRAY_BUFFER, (long) this.maxLights * this.lightSize, GL_STREAM_DRAW);
             resized = true;
         }
 
-        if (resized || this.visibleLightsChanged()) {
+        if (resized || this.visibleLightsChanged) {
             this.updateAllLights();
             this.lastVisibleLights.clear();
             this.lastVisibleLights.addAll(this.visibleLights);
+            this.visibleLightsChanged = false;
         } else {
             this.updateDirtyLights();
         }
@@ -203,6 +198,11 @@ public abstract class InstancedLightRenderer<T extends LightData & InstancedLigh
     @Override
     public List<? extends LightRenderHandle<T>> getLights() {
         return this.lights;
+    }
+
+    @Override
+    public List<? extends LightRenderHandle<T>> getPreparedLights() {
+        return this.visibleLights;
     }
 
     @Override
@@ -244,6 +244,7 @@ public abstract class InstancedLightRenderer<T extends LightData & InstancedLigh
         @Override
         public void free() {
             InstancedLightRenderer.this.lights.remove(this);
+            InstancedLightRenderer.this.visibleLights.remove(this);
             InstancedLightRenderer.this.lastVisibleLights.remove(this);
         }
     }

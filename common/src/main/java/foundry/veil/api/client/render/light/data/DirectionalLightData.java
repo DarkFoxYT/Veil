@@ -30,13 +30,22 @@ public class DirectionalLightData extends LightData implements EditorAttributePr
     }
 
     /**
+     * Copies this light's direction into the specified vector.
+     *
+     * @param store The vector to store the direction in
+     * @return The passed in vector
+     */
+    public Vector3f getDirection(Vector3f store) {
+        return store.set(this.direction);
+    }
+
+    /**
      * Sets the direction of this light.
      *
      * @param direction The new direction
      */
     public DirectionalLightData setDirection(Vector3fc direction) {
-        this.direction.set(direction);
-        return this;
+        return this.setDirection(direction.x(), direction.y(), direction.z());
     }
 
     /**
@@ -47,7 +56,13 @@ public class DirectionalLightData extends LightData implements EditorAttributePr
      * @param z The new z direction
      */
     public DirectionalLightData setDirection(float x, float y, float z) {
+        if (Float.compare(this.direction.x, x) == 0 &&
+                Float.compare(this.direction.y, y) == 0 &&
+                Float.compare(this.direction.z, z) == 0) {
+            return this;
+        }
         this.direction.set(x, y, z);
+        this.markDirty();
         return this;
     }
 
@@ -88,8 +103,7 @@ public class DirectionalLightData extends LightData implements EditorAttributePr
 
     @Override
     public DirectionalLightData setTo(Camera camera) {
-        this.direction.set(camera.getLookVector());
-        return this;
+        return this.setDirection(camera.getLookVector());
     }
 
     @Override
@@ -102,7 +116,7 @@ public class DirectionalLightData extends LightData implements EditorAttributePr
         float[] editDirection = new float[]{this.direction.x(), this.direction.y(), this.direction.z()};
 
         if (ImGui.sliderFloat3("##direction", editDirection, -1.0F, 1.0F)) {
-            this.direction.set(editDirection);
+            this.setDirection(editDirection[0], editDirection[1], editDirection[2]);
         }
         ImGui.sameLine(0, ImGui.getStyle().getItemInnerSpacingX());
         ImGui.text("direction");

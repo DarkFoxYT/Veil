@@ -1,6 +1,6 @@
 {
-  "vertex": "veil:light/area",
-  "fragment": "veil:light/area",
+  "vertex": "veil:blit_screen",
+  "fragment": "veil:light/spot",
   "textures": {
     "SceneSampler": {
       "type": "framebuffer",
@@ -9,6 +9,8 @@
     "DepthSampler": {
       "type": "framebuffer",
       "name": "minecraft:main:depth"
-    }
+    },
+    "AlbedoSampler": "veil:dynamic_buffer/albedo",
+    "NormalSampler": "veil:dynamic_buffer/normal"
   }
 }

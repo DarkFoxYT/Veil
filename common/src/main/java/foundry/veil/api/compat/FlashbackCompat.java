@@ -4,6 +4,7 @@ import foundry.veil.Veil;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**
@@ -13,7 +14,20 @@ import java.util.ServiceLoader;
  */
 public interface FlashbackCompat {
 
-    FlashbackCompat INSTANCE = Veil.platform().isModLoaded("flashback") ? ServiceLoader.load(FlashbackCompat.class).findFirst().orElse(null) : null;
+    FlashbackCompat INSTANCE = load();
+
+    private static FlashbackCompat load() {
+        if (!Veil.platform().isModLoaded("flashback")) {
+            return null;
+        }
+
+        try {
+            return ServiceLoader.load(FlashbackCompat.class).findFirst().orElse(null);
+        } catch (ServiceConfigurationError | LinkageError | RuntimeException e) {
+            Veil.LOGGER.warn("Failed to load Flashback compatibility. Veil will continue without Flashback hooks.", e);
+            return null;
+        }
+    }
 
     /**
      * @return Whether flashback is loaded

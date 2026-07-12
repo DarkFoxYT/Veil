@@ -1,12 +1,19 @@
 {
-  "vertex": "veil:light/point",
+  "vertex": "veil:blit_screen",
   "fragment": "veil:light/point",
+  "required_features": [
+    "shader_storage"
+  ],
   "textures": {
-    "AlbedoSampler": "veil:dynamic_buffer/albedo",
-    "NormalSampler": "veil:dynamic_buffer/normal",
+    "SceneSampler": {
+      "type": "framebuffer",
+      "name": "minecraft:main"
+    },
     "DepthSampler": {
       "type": "framebuffer",
       "name": "minecraft:main:depth"
-    }
+    },
+    "AlbedoSampler": "veil:dynamic_buffer/albedo",
+    "NormalSampler": "veil:dynamic_buffer/normal"
   }
 }

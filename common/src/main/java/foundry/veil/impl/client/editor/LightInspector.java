@@ -138,14 +138,24 @@ public class LightInspector extends SingleWindowInspector {
     }
 
     private static void renderLightAttributeComponents(LightData lightData) {
+        ImGui.indent();
+        if (lightData instanceof EditorAttributeProvider editorAttributeProvider && editorAttributeProvider.rendersCompleteEditor()) {
+            editorAttributeProvider.renderImGuiAttributes();
+            ImGui.unindent();
+            return;
+        }
+
         Colorc lightColor = lightData.getColor();
 
         float[] editBrightness = new float[]{lightData.getBrightness()};
+        float[] editTemperature = new float[]{lightData.getTemperature()};
         float[] editLightColor = new float[]{lightColor.red(), lightColor.green(), lightColor.blue()};
 
-        ImGui.indent();
-        if (ImGui.dragScalar("brightness", editBrightness, 0.02F)) {
+        if (ImGui.dragScalar("intensity", editBrightness, 0.02F)) {
             lightData.setBrightness(editBrightness[0]);
+        }
+        if (ImGui.dragScalar("temperature (K)", editTemperature, 25.0F, 1000.0F)) {
+            lightData.setTemperature(editTemperature[0]);
         }
         if (ImGui.colorEdit3("color", editLightColor)) {
             lightData.setColor(editLightColor[0], editLightColor[1], editLightColor[2]);

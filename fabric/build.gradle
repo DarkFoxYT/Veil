@@ -24,6 +24,19 @@ loom {
     }
 }
 
+def cleanFabricRuntimeRemapCache = tasks.register('cleanFabricRuntimeRemapCache', Delete) {
+    delete(
+            file('runs/client/.fabric/processedMods'),
+            file('runs/client/.fabric/tmp'),
+            file('runs/server/.fabric/processedMods'),
+            file('runs/server/.fabric/tmp')
+    )
+}
+
+tasks.matching { it.name == 'runClient' || it.name == 'runServer' }.configureEach {
+    dependsOn(cleanFabricRuntimeRemapCache)
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
